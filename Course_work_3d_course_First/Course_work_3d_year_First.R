@@ -4,17 +4,31 @@ library(janeaustenr)
 library(tidytext)
 library(stringr)
 
+# install.packages("textstem")
+# library(textstem)
+install.packages("koRpus")
+library(koRpus)
 install.packages("NLP")
 install.packages("RColorBrewer")
 install.packages("corpus")
 install.packages("text2vec")
+# install.packages("spacyr")
+install.packages("remotes")
+remotes::install_github("quanteda/spacyr")
 library("stringr")
 library("tm")
 library("SnowballC")
 library("wordcloud") 
 library("RColorBrewer")
+library("spacyr")
+library(qdap)  # для Bag of words 
+install.packages('ru_core_news_md')
+spacy_install()
+# скачивание языковой модели для русского языка из пакета spacyr
+spacy_download_langmodel("ru_core_news_sm")
+spacy_initialize(model = "ru_core_news_sm")
 
-
+# считывание набора данных, состоящего из размеченных текстов в виде датафрейма
 banks_df <- read.csv("banks.csv", sep = '\t')
 mystem <- function(doc) {
   
@@ -36,14 +50,16 @@ feedback <- tm_map(feedback, tolower)
 feedback <- tm_map(feedback, removeNumbers)
 feedback <- tm_map(feedback, removePunctuation)
 feedback <- tm_map(feedback, mystem)
+feedback <- tokenize_word_stems(feedback[[1]])
 feedback <- tm_map(feedback, removeWords, c(stopwords("russian"),
                                             "это", "также",
-                                            "быть", "мочь",
-                                            "май", "апрель", "март",
-                                            "ноябрь", "который",
-                                            "псковский", "молодежный",
-                                            "псков", "центр", 
-                                            "городской"))
+                                            "быть", "мочь"))
+library(quanteda)
+feedback_tokens <- tokens(feedback[[1]][["content"]])
+# banks_df$preprocessed_list_of_words <- tokens(feedback[["1"]][["content"]])['text1']
+# banks_df$preprocessed_list_of_words[1]
+freq_terms(2,feedback[[1]][["content"]] )
+
 # bind_tf_idf(banks_df, )
 
 # 
