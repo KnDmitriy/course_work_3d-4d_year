@@ -1,0 +1,264 @@
+\documentclass[bachelor, och, coursework ]{SCWorks}
+% параметр ---тип обучения ---одно из значений:
+%    spec     ---специальность
+%    bachelor ---бакалавриат (по умолчанию)
+%    master   ---магистратура
+% параметр ---форма обучения ---одно из значений:
+%    och   ---очное (по умолчанию)
+%    zaoch ---заочное
+% параметр ---тип работы ---одно из значений:
+%    referat    ---реферат
+%    coursework ---курсовая работа (по умолчанию)
+%    diploma    ---дипломная работа
+%    pract      ---отчет по практике
+%    pract      ---отчет о научно-исследовательской работе
+%    autoref    ---автореферат выпускной работы
+%    assignment ---задание на выпускную квалификационную работу
+%    review     ---отзыв руководителя
+%    critique   ---рецензия на выпускную работу
+% параметр ---включение шрифта
+%    times    ---включение шрифта Times New Roman (если установлен)
+%               по умолчанию выключен
+\usepackage{amsmath}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage[sort,compress]{cite}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{fancyvrb}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{caption}
+\usepackage[english,russian]{babel}
+\captionsetup[figure]{font= normalsize, labelfont=normalsize}
+\DeclareUnicodeCharacter{00A0}{ }
+
+\usepackage[colorlinks=true]{hyperref}
+\usepackage{float}
+\usepackage{caption}
+\captionsetup[figure]{font= normalsize, labelfont=normalsize}
+
+
+\begin{document}
+
+% Кафедра (в родительном падеже)
+\chair{Дискретной математики и информационных технологий}
+
+% Тема работы
+\title{Технологии формирования облака слов на платформе Python}
+
+% Курс
+\course{3}
+
+% Группа
+\group{322}
+
+% Факультет (в родительном падеже) (по умолчанию "факультета КНиИТ")
+%\department{факультета КНиИТ}
+
+% Специальность/направление код ---наименование
+%\napravlenie{02.03.02 "-----Фундаментальная информатика и информационные технологии}
+%\napravlenie{02.03.01 "-----Математическое обеспечение и администрирование информационных систем}
+\napravlenie{09.03.01 "---Информатика и вычислительная техника}
+%\napravlenie{09.03.04 "-----Программная инженерия}
+%\napravlenie{10.05.01 "-----Компьютерная безопасность}
+
+% Для студентки. Для работы студента следующая команда не нужна.
+%\studenttitle{Студентки}
+
+% Фамилия, имя, отчество в родительном падеже
+\author{Конорова Дмитрия Аркадьевича}
+
+% Заведующий кафедрой
+\chtitle{доцент, к.\,ф.-м.\,н.} % степень, звание
+\chname{Л.\,Б.\,Тяпаев}
+
+%Научный руководитель (для реферата преподаватель проверяющий работу)
+\satitle{доцент, к.\,э.\,н.} %должность, степень, звание
+\saname{Г.\,Ю.\,Чернышова}
+
+
+% Семестр (только для практики, для остальных
+% типов работ не используется)
+\term{8}
+
+% Наименование практики (только для практики, для остальных
+% типов работ не используется)
+%\practtype{}
+
+% Продолжительность практики (количество недель) (только для практики,
+% для остальных типов работ не используется)
+\duration{4}
+
+% Даты начала и окончания практики (только для практики, для остальных
+% типов работ не используется)
+\practStart{30.04.2021}
+\practFinish{27.05.2021}
+
+% Год выполнения отчета
+\date{2023}
+
+\maketitle
+
+% Включение нумерации рисунков, формул и таблиц по разделам
+% (по умолчанию ---нумерация сквозная)
+% (допускается оба вида нумерации)
+%\secNumbering
+
+
+\tableofcontents
+
+
+% Раздел "Обозначения и сокращения". Может отсутствовать в работе
+
+
+% Раздел "Определения". Может отсутствовать в работе
+%\definitions
+
+% Раздел "Определения, обозначения и сокращения". Может отсутствовать в работе.
+% Если присутствует, то заменяет собой разделы "Обозначения и сокращения" и "Определения"
+%\defabbr
+
+
+% Раздел "Введение"
+\intro
+
+
+
+\section{ Теоретическая часть}
+\subsection{ Методы векторизации}
+TF-IDF (term frequency - inverse document term frequency) --- это статистический показатель, применяемый для оценки важности слова в контексте категории, документа или коллекции документов. Он позволяет опредлить важность слова для данной коллекции документов. 
+Term frequency (tf) выдает то, сколько раз слово t встречалось в документе d.
+$tf(t, d) = f_{t, d}$.
+
+Inverse document term frequency (IDF) используется для рассчета того, насколько редко встречается некоторое слово t среди всех документов. Слова, которые встречаются редко имеют большой IDF.
+$idf(t, D) = log\frac{N}{|\{d\in D:t\in d|\}}$, где t - термин; D - множество документов; N - количество докуменов в корпусе; $|\{d\in D:t\in d\}|$ - число документов, в которых встречается термин t.
+
+
+Методы векторизации:
+{\begin{itemize}
+    \item Bag of words;
+    \item hot vectors;
+    \item TF-IDF;
+    \item word2vec;
+    \item GLOVE;
+    \item Fast text;
+    \item CBOW.
+\end{itemize}}
+https://neptune.ai/blog/vectorization-techniques-in-nlp-guide
+
+
+Ссылка на сайт пакета для R text2vec: https://cran.r-project.org/web/packages/text2vec/vignettes/text-vectorization.html#Text\_analysis\_pipeline
+
+Примеры кода с использованием пакета text2vec:
+\begin{verbatim}
+    # define preprocessing function and tokenization function
+prep_fun = tolower
+tok_fun = word_tokenizer
+
+it_train = itoken(train$review, 
+             preprocessor = prep_fun, 
+             tokenizer = tok_fun, 
+             ids = train$id, 
+             progressbar = FALSE)
+vocab = create_vocabulary(it_train)
+
+
+train_tokens = tok_fun(prep_fun(train$review))
+
+
+#Аналогичное определение функции it_train
+it_train = itoken(train_tokens, 
+                  ids = train$id,
+                  # turn off progressbar because it won't look nice in rmd
+                  progressbar = FALSE)
+
+vocab = create_vocabulary(it_train)
+vocab
+
+
+
+
+
+#N-GRAMS
+t1 = Sys.time()
+vocab = create_vocabulary(it_train, ngram = c(1L, 2L))
+print(difftime(Sys.time(), t1, units = 'sec'))
+## Time difference of 1.557114 secs
+vocab = prune_vocabulary(vocab, term_count_min = 10, 
+                         doc_proportion_max = 0.5)
+
+bigram_vectorizer = vocab_vectorizer(vocab)
+
+dtm_train = create_dtm(it_train, bigram_vectorizer)
+
+t1 = Sys.time()
+glmnet_classifier = cv.glmnet(x = dtm_train, y = train[['sentiment']], 
+                 family = 'binomial', 
+                 alpha = 1,
+                 type.measure = "auc",
+                 nfolds = NFOLDS,
+                 thresh = 1e-3,
+                 maxit = 1e3)
+print(difftime(Sys.time(), t1, units = 'sec'))
+## Time difference of 5.2114 secs
+
+
+
+
+#NORMALIZAION
+dtm_train_l1_norm = normalize(dtm_train, "l1")
+
+
+#TF-IDF
+vocab = create_vocabulary(it_train)
+vectorizer = vocab_vectorizer(vocab)
+dtm_train = create_dtm(it_train, vectorizer)
+
+# define tfidf model
+tfidf = TfIdf$new()
+# fit model to train data and transform train data with fitted model
+dtm_train_tfidf = fit_transform(dtm_train, tfidf)
+# tfidf modified by fit_transform() call!
+# apply pre-trained tf-idf transformation to test data
+dtm_test_tfidf = create_dtm(it_test, vectorizer)
+dtm_test_tfidf = transform(dtm_test_tfidf, tfidf)
+\end{verbatim}
+
+% Раздел "Заключение"
+\conclusion
+
+
+
+%Библиографический список, составленный вручную, без использования BibTeX
+%
+\begin{thebibliography}{99}
+ \bibitem {1} Линник Л. А., Петросян М. М., Облако слов как метод компрессии информации научного текста // Наука. Информатизация. Технологии. Образование : материалы XIII международной научно-практической конференции, г. Екатеринбург, 24-28 февраля 2020 г. ---Екатеринбург : Издательство РГППУ, 2020. --- С. 99-108. 
+\bibitem{2} Сапух Татьяна Викторовна Современные средства формирования лексических навыков учащихся на уроках английского языка (на примере облака слов) // АНИ: педагогика и психология. 2018. №3 (24).[Электронный ресурс]. URL: https://cyberleninka.ru/article/n/sovremennye-sredstva-formirovaniya-leksicheskih-navykov-uchaschihsya-na-urokah-angliyskogo-yazyka-na-primere-oblaka-slov (дата обращения: 03.09.2023).
+\bibitem{3} Яркин П. А. Изучение экологического дискурса в контексте исследования экологического сознания // Экопсихологические исследования – 6: экология детства и психология устойчивого развития. 2020. №6.[Электронный ресурс]. URL: https://cyberleninka.ru/article/n/izuchenie-ekologicheskogo-diskursa-v-kontekste-issledovaniya-ekologicheskogo-soznaniya (дата обращения: 03.09.2023).
+\bibitem{4} Journal of Teaching and Learning with Technology, Vol. 5, No. 1, July 2016, pp.16-32.
+\bibitem{5} Davies, B.M., Mowforth, O.D., Khan, D.Z. et al. The development of lived experience-centered word clouds to support research uncertainty gathering in degenerative cervical myelopathy: results from an engagement process and protocol for their evaluation, via a nested randomized controlled trial. Trials 22, 415 (2021). [Электронный ресурс]. URL: https://doi.org/10.1186/s13063-021-05349-8 (дата обращения: 10.09.2023).
+\bibitem{6} Umair, A., Masciari, E. Sentimental and spatial analysis of COVID-19 vaccines tweets. J Intell Inf Syst 60, 1–21 (2023). [Электронный ресурс]. URL: https://doi.org/10.1007/s10844-022-00699-4 (дата обращения: 25.09.2023).
+\bibitem{7} Онлайн сервис формирования облака слов ``WordClouds.com''.  URL: https://www.wordclouds.com/ (дата обращения: 03.09.2023).
+\bibitem{8} Онлайн сервис формирования облака слов ``wordcloud.online''. [Электронный ресурс]. URL: https://wordcloud.online/ (дата обращения: 04.09.2023).
+\bibitem{9} Официальный сайт Python. [Электронный ресурс]. URL: https://www.python.org/
+ \bibitem{10} Официальное сообщество VK ``Самарская область''. [Электронный ресурс]. URL: https://vk.com/samaroblast (дата обращения: 03.09.2023).
+ \bibitem{11} Официальное сообщество VK ``Саратовская область''. [Электронный ресурс]. URL: https://vk.com/saratovoblgov (дата обращения: 03.09.2023).
+ \bibitem{12} Официальное сообщество VK ``Республика Татарстан''. [Электронный ресурс]. URL: https://vk.com/nashtatarstan (дата обращения: 01.09.2023).
+\bibitem{13} Список русских имён и фамилий. [Электронный ресурс]. URL: https://github.com/Raven-SL/ru-pnames-list/tree/master/lists (дата обращения: 20.09.2023).
+\end{thebibliography}
+
+%Библиографический список, составленный с помощью BibTeX
+%
+%\bibliographystyle{gost780uv}
+%\bibliography{thesis}
+
+% Окончание основного документа и начало приложений
+% Каждая последующая секция документа будет являться приложением
+
+\section{ПРИЛОЖЕНИЕ А}
+\begin{verbatim}
+\end{verbatim}
+\end{document}
