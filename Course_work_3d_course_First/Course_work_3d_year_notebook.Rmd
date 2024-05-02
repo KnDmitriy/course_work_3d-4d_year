@@ -1,0 +1,175 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code.
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*.
+
+```{r}
+install_or_load_pack <- function(pack){
+   create.pkg <- pack[!(pack %in% installed.packages()[, "Package"])]
+    if (length(create.pkg))
+     install.packages(create.pkg, dependencies = TRUE)
+     sapply(pack, require, character.only = TRUE)
+}
+packages <- c("ggplot2",  "data.table", "wordcloud", "tm", "wordcloud2","scales", "tidytext", "devtools", "twitteR", "caret", "magrittr", "RColorBrewer", "ggdendro","tidyr", "topicmodels", "SnowballC", "gtools", "dplyr", 'tidyverse')
+install_or_load_pack(packages)
+
+```
+
+```{r}
+# library('tidytext')
+# library(tidyverse)
+```
+
+```{r}
+path <- "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Course_work_3d_course_First/Data/banks.csv"
+```
+
+```{r}
+banks_df <- read.csv(path, sep = '\t')
+```
+
+```{r}
+banks_texts <- banks_df[, 3]
+```
+
+```{r}
+class(banks_texts)
+```
+
+```{r}
+head(banks_texts)
+```
+
+```{r}
+banks_score <- banks_df[, 2]
+head(banks_score)
+```
+
+Function to create textual corpus
+
+```{r}
+corpus_tm <- function(x){
+   corpus_tm <- Corpus(VectorSource(x))
+}
+```
+
+```{r}
+banks_texts <- corpus_tm(banks_texts)
+banks_score <- corpus_tm(banks_score)
+```
+
+```{r}
+banks_texts
+```
+
+Function to clean data in the corpus
+
+```{r}
+clean_corpus <- function(corpus_to_use){
+corpus_to_use %>%
+   tm_map(removePunctuation) %>%
+   tm_map(stripWhitespace) %>%
+   tm_map(content_transformer(function(x) iconv(x, to='UTF-8', sub='byte'))) %>%
+   tm_map(removeNumbers) %>%
+   tm_map(content_transformer(tolower)) %>%
+   tm_map(removeWords, c(stopwords("russian"),"это", "также",
+                                            "быть", "мочь"))
+}
+```
+
+```{r}
+clean_banks_texts <- clean_corpus(banks_texts)
+clean_banks_score <- clean_corpus(banks_score)
+```
+
+```{r}
+clean_banks_texts
+```
+
+```{r}
+doc_term_mat <- TermDocumentMatrix(clean_banks_texts)
+freq_terms <- findFreqTerms(doc_term_mat)
+ terms_grouped <- doc_term_mat[freq_terms,] %>%
+      as.matrix() %>%
+      rowSums() %>%
+      data.frame(Term=freq_terms, Frequency = .) %>%
+      arrange(desc(Frequency)) %>%
+      mutate(prop_term_to_total_terms=Frequency/nrow(.))
+
+```
+
+Create TermDocumentMatrix to attain frequent terms
+
+```{r}
+find_freq_terms_fun <- function(corpus_in){
+  doc_term_mat <- TermDocumentMatrix(corpus_in)
+  # freq_terms <- findFreqTerms(doc_term_mat)[1:max(doc_term_mat$nrow)]
+  freq_terms <- findFreqTerms(doc_term_mat)
+  terms_grouped <- doc_term_mat[freq_terms,] %>%
+      as.matrix() %>%
+      rowSums() %>%
+      data.frame(Term=freq_terms, Frequency = .) %>%
+      arrange(desc(Frequency)) %>%
+      mutate(prop_term_to_total_terms=Frequency/nrow(.))
+  return(data.frame(terms_grouped))
+}
+```
+
+```{r}
+tdm_banks <- TermDocumentMatrix(clean_banks_texts)
+```
+
+```{r}
+# clean_banks_texts_freq_terms <- data.frame(find_freq_terms_fun(clean_banks_texts))
+clean_banks_texts_freq_terms <- data.frame(find_freq_terms_fun(terms_grouped))
+
+
+```
+
+```{r}
+wordcloud2(clean_banks_texts_freq_terms[,1:2], shape="pentagon",
+				      color="random-dark")
+```
+
+# Tidy way
+
+```{r}
+banks_texts_df <- data.frame(banks_df[, 3])
+banks_texts_df
+```
+
+```{r}
+library(tidytext)
+```
+
+```{r}
+class(banks_texts_df)
+```
+
+```{r}
+banks_texts_tibble <- as_tibble(banks_texts_df)
+class(banks_texts_tibble)
+```
+
+```{r}
+banks_texts_tibble
+```
+
+```{r}
+names(banks_texts_df) <- 'text'
+unnest_banks_texts_df <- banks_texts_df %>% unnest_tokens(word, text)
+```
+
+Столько различных слов в датасете
+
+```{r}
+unnest_banks_texts_df %>% distinct(word) %>% count()
+```
+
+```{r}
+
+```
