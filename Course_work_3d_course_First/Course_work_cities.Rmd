@@ -5,24 +5,42 @@ install_or_load_pack <- function(pack){
      install.packages(create.pkg, dependencies = TRUE)
      sapply(pack, require, character.only = TRUE)
 }
-packages <- c("ggplot2",  "data.table", "wordcloud", "tm", "wordcloud2","scales", "tidytext", "devtools", "twitteR", "caret", "magrittr", "RColorBrewer", "ggdendro","tidyr", "topicmodels", "SnowballC", "gtools", "dplyr", 'tidyverse', 'readxl')
+packages <- c("ggplot2",  "data.table", "wordcloud", "tm", "wordcloud2", "tidytext", "devtools", "dplyr", 'tidyverse', 'readxl', 'udpipe', 'writexl', 'xlsx', 'rlang')
 install_or_load_pack(packages)
 ```
 
 ```{r}
-path_city <- "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Course_work_3d_course_First/Data/2021_Respublika_Tatarstan_posty.xlsx"
+library('writexl')
+library('xlsx')
+
+library('janeaustenr')
+library('rlang')
 ```
 
 ```{r}
-city_df <- read_excel(path)
+input_data <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK/Ulyanovskaya_Oblast_2023.xlsx", sheetIndex=1, header = FALSE
+   )
 ```
 
 ```{r}
-head(city_df)
+female_names_rus <- read.csv("/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Course_work_3d_course_First/Data/female_names_rus.txt", header=FALSE)
+male_names_rus <- read.csv("/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Course_work_3d_course_First/Data/male_names_rus.txt", header=FALSE)
+male_surnames_rus <- read.csv("/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Course_work_3d_course_First/Data/male_surnames_rus.txt", header=FALSE)
 ```
 
 ```{r}
-corp_city_df <- Corpus(VectorSource(city_df))
+corp_city_df <- VCorpus(VectorSource(input_data))
+```
+
+```{r}
+extra_stop_words <- c('и','димитровграда', 'димитровград', 'ульяновскаяобласть', 'ульяновск', 'ульяновский', 'саранск', 'саранска', 'мордовие', 'рм', 'рма', 'мордовия', 'мордовский', 'заец', 'idюрий', 'главамарийэл', 'марий', 'эл', 'марийэл', 'эть', 'васил', 'чурин', 'кировский', 'кировскаяобласть', 'вятский', 'мельниченко', 'месяц', 'оренбургнуть', 'объясняемрф', 'провести', 'инвестор', 'вести', 'реализация', 'башкортостанный', 'радий', 'подписать', 'проект', 'пермский', 'пермскийкрай', 'край', 'прикамья', 'краевой', 'задача', 'важно', 'оренбуржец', 'оренбург', 'новость', 'подчеркнуть', 'оренбуржье', 'оренбургский', 'оренбургскаяобласть', 'поддержка', 'часть', 'км', 'валерийрадаеть', 'олегнуть', 'должен', 'около', 'рассказать', 'глава', 'губернатор', 'развитие', 'январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь', 'город', 'ecom', 'казань', 'подробность', 'подробный', 'радия', 'процент', 'уф', 'часть', 'вопрос', 'делать', 'сделать', 'благодаря', 'участие', 'пройти', 'идти', 'создать', 'создавать', 'дать',  'рамка', 'место', 'первый', 'получить', 'удмуртия', 'радай', 'юлие', 'пензенский', 'пенза', 'пензенскаяобласть', 'новый', 'лучший', 'самый', 'работа', 'рабочий', 'работать', 'региональный', 'нижегородскаяобладать', 'clubнижегородский', 'нижегородскаяобласть', 'нижегородский', 'нижний', 'новгород', 'чувашия', 'чувашие', 'обть', "бaшҡортостать", "бaшҡортостан", 'командахабиров', 'рб', 'миллиард', 'башкирия', 'башкортостан', 'башкортостана', 'мый', 'аный', 'мухаметшина', 'мухаметшин', 'реть', 'рф', 'день', 'отметить', 'число', 'миллион', 'ход', 'президент','страна', 'тысяча', 'рубль', 'доллар', 'район', 'итог', 'татарстан', 'татарстать', 'российский', 'ма', 'область', 'республика', 'саратовский', 'татарстан', 'татарстана', 'самарский','экономический', 'экономика', 'регион', 'год', "миннихан", "рт", "россия", "рустам", "руст", 'россия', 'конкурентоспособность', 'инновация', 'инвестиция', 'инвестиционный', 'рустамминнихан', 'дмитрий', 'азаров', 'саратовскаяобласть', 'саратовская', 'самарскаяобласть', 'азар', 'стать', 'rn«', 'твой', 'сих', 'ком', 'свой',
+'слишком', 'нами', 'всему', 'будь', 'саму', 'чаще', 'ваше', 'наш', 'затем', 'еще', 'наши', 'ту', 'каждый',
+'мочь', 'весь', 'этим', 'наша', 'своих', 'оба', 'который', 'зато', 'те', 'вся', 'ваш', 'такая', 'теми', 'ею', 'нередко',
+'также', 'чему', 'собой', 'нем', 'вами', 'ими', 'откуда', 'такие', 'тому', 'та', 'очень', 'нему',
+'алло', 'оно', 'кому', 'тобой', 'таки', 'мой', 'нею', 'ваши', 'ваша', 'кем', 'мои',
+'однако', 'сразу', 'свое', 'ними', 'всё', 'неё', 'тех', 'хотя', 'всем', 'тобою', 'тебе', 'одной', 'другие',
+'буду', 'моё', 'своей', 'такое', 'всею', 'будут', 'своего', 'кого', 'свои', 'мог', 'нам', 'особенно', 'её',
+'наше', 'кроме', 'вообще', 'вон', 'мною', 'никто', 'это', 'изза', 'именно', 'поэтому', 'будьт', 'являться', 'чувашский', 'тыса', 'смочь', 'ваший', 'гльба', 'ать', 'уть', 'ивать', 'ольги', 'пенз', 'ер', 'иметь', 'олегнуть', 'сг', 'например', 'сообщить', 'сообщать', 'среди', 'нть', 'пер', 'зспермь', 'края', 'ради', 'назвать', 'важный')
 ```
 
 ```{r}
@@ -30,11 +48,9 @@ clean_corpus <- function(corpus_to_use){
 corpus_to_use %>%
    tm_map(removePunctuation) %>%
    tm_map(stripWhitespace) %>%
-   tm_map(content_transformer(function(x) iconv(x, to='UTF-8', sub='byte'))) %>%
+   tm_map(content_transformer(function(x) iconv(x, to='UTF-8'))) %>%
    tm_map(removeNumbers) %>%
-   tm_map(content_transformer(tolower)) %>%
-   tm_map(removeWords, c(stopwords("russian"),"это", "также",
-                                            "быть", "мочь", "–")) 
+   tm_map(content_transformer(tolower)) 
 }
 ```
 
@@ -43,37 +59,148 @@ corp_city_df <- clean_corpus(corp_city_df)
 ```
 
 ```{r}
-tdm <- TermDocumentMatrix(corp_city_df)
-m <- as.matrix(tdm)
-v <- sort(rowSums(m), decreasing = TRUE)
-d <- data.frame(word = names(v), freq = v)
-```
-
-```{r}
-top_n(d, 10)
-```
-```{r}
-wordcloud(d$word, d$freq, random.order=FALSE, rot.per=0.3, scale=c(4, .5), max.words=101, colors=brewer.pal(8, "Dark2"))
+corp_city_df[["1"]][["content"]] <- gsub("[\U{1F600}-\U{1F64F}\U{1F300}-\U{1F5FF}\U{1F680}-\U{1F6FF}\U{1F1E0}-\U{1F1FF}\U{2500}-\U{2BEF}\U{2702}-\U{27B0}\U{24C2}-\U{1F251}\U{1f926}-\U{1f937}\U{10000}-\U{10ffff}\u{2640}-\u{2642}\u{2600}-\u{2B55}\u{200d}\u{23cf}\u{23e9}\u{231a}\u{fe0f}\u{3030}]", "", corp_city_df[["1"]][["content"]], perl = TRUE)
 ```
 
 ```{r}
 library(udpipe)
 ```
+
 ```{r}
-gsd <- udpipe_download_model(language = "russian-gsd")
-str(dl)
+gsd_model_raw <- udpipe_download_model(language = "russian-gsd")
+```
+
+```{r}
+gsd_model <- udpipe_load_model(file = gsd_model_raw$file_model)
+```
+
+```{r}
+x <- udpipe_annotate(gsd_model, x = corp_city_df[["1"]][["content"]],  parser = "none")
+x <- as.data.frame(x)
+str(x$lemma)
+```
+
+среднее соличество слов в предложении до удаления стоп-слов
+
+```{r}
+nrow(x) / length(unique(x$sentence))
+```
+
+```{r}
+# x <- VCorpus(VectorSource(x$lemma))
+x$lemma <- noquote(x$lemma)
+x$lemma <- str_replace_all(x$lemma, "[[:punct:]]", "")
+tmp <- x$lemma
+```
+
+```{r}
+stopwords_combined <- paste(c(stopwords("russian"), extra_stop_words, 
+                              tolower(male_names_rus$V1), 
+                              tolower(male_surnames_rus$V1), 
+                              tolower(female_names_rus$V1)), collapse = "|")
+tmp <- str_replace_all(x$lemma, paste("\\b(", stopwords_combined, ")\\b"), "")
+#cleaned_lemma <- gsub(paste0("\\b(", stopwords_combined, ")\\b"), "", x$lemma)
+```
+
+```{r}
+tmp <- str_replace_all(tmp, '№', '')
+tmp <- str_replace_all(tmp, '−', '')
+tmp <- str_replace_all(tmp, '—', '')
+```
+
+```{r}
+tmp <- str_replace_all(tmp, 'правительстворазвитие', 'правительство')
+tmp <- str_replace_all(tmp, 'правительстворб', 'правительство')
+tmp <- str_replace_all(tmp, 'цифровый', 'цифровой')
+tmp <- str_replace_all(tmp, 'научныймощность', 'научный мощность')
+tmp <- str_replace_all(tmp, 'club', '')
+tmp <- str_replace_all(tmp, 'правительствомарийэть', 'правительство')
+tmp <- str_replace_all(tmp, 'цура', 'цур')
+tmp <- tmp[sapply(tmp, nchar) > 0]
+```
+
+среднее количество слов в предложении после удаления стоп-слов
+
+```{r}
+length(tmp) / length(unique(x$sentence))
+```
+
+```{r}
+v <- sort(table(tmp), decreasing = TRUE)
+d <- as.data.frame(v)
+colnames(d) <- c("word", "freq")
+d$ratio <- d$freq / sum(d$freq) * 100
+```
+
+```{r}
+top_n(d, 15)[1:15, ]
+```
+
+```{r}
+write.xlsx(top_n(d, 15)[1:15, ], "//Users//DmitryKonorov//Desktop//Основная_учеба//3й_курс//Курсовая_3й_курс//Результаты//Ulyanovskaya_Oblast.xlsx", sheetName = "Sheet3", append=TRUE)
+```
+
+```{r}
+jpeg(width = 1024, height = 768, quality = 10000, pointsize = 28,  file="//Users//DmitryKonorov//Desktop//Основная_учеба//3й_курс//Курсовая_3й_курс//Результаты//Ulyanovskaya_Oblast_2023 Wordcloud.jpeg")
+wordcloud(d$word, d$freq, random.order=FALSE, rot.per=0.2, scale=c(3, .5), max.words=190, colors=brewer.pal(8, "Dark2"))
+dev.off()
+```
+
+```{r}
+jpeg(width = 1280, height = 720, quality= 100000, pointsize = 28, file="//Users//DmitryKonorov//Desktop//Основная_учеба//3й_курс//Курсовая_3й_курс//Результаты//Ulyanovskaya_Oblast_2023 Barplot.jpeg")
+barplot(d[1:15,]$freq, las = 2, names.arg = d[1:15,]$word,
+        col ="lightblue", main ="Наиболее частые слова",
+        ylab = "Частота слов", cex.names = 0.55)
 ```
 
 ```{r}
 ```
 
 ```{r}
+# lkm <- x %>% filter(x$lemma %in% d$word[1:15]) 
+# lkm <- lkm  %>% group_by(lkm$lemma) %>% count(unique(lkm$doc_id))
 ```
 
 ```{r}
+#total_words <- x %>% 
+#  group_by(lemma) %>% 
+ # summarize(sum(nrow(unique(doc_id))))
 ```
 
+```{r}
+#x_tidy <- corp_city_df[["1"]][["content"]] %>%
+#  unnest_tokens(word, lemma)
 
+# Применение функции bind_tf_idf
+#x_tidy <- x_tidy %>%
+#  bind_tf_idf(word, doc_id, n)
 
+# Вывод результата
+#head(x_tidy)
 
+```
 
+```{r}
+select(x, lemma, doc_id) %>%  bind_tf_idf(lemma, doc_id)
+
+```
+
+```{r}
+tidy_x <- select(x, doc_id, lemma) %>%  count(doc_id, lemma, sort = TRUE) 
+tf_idf <- tidy_x %>%
+  bind_tf_idf(lemma, doc_id, n) 
+View(tf_idf %>% filter(lemma %in% c(as.character(d$word[1:15]))))
+
+```
+
+```{r}
+mask <- as_data_mask(tf_idf$lemma %in% d$word[1:15])
+eval_tidy(tf_idf$lemma, mask)
+```
+
+```{r}
+tdm <- TermDocumentMatrix(select(x, lemma, doc_id), control = list(weighting = function(x) weightTfIdf(x, normalize = TRUE)))
+
+# Преобразуем матрицу в датафрейм
+tfidf_df <- as.data.frame(as.matrix(tdm))
+```
