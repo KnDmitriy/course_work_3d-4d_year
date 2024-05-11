@@ -13,14 +13,25 @@ install_or_load_pack(packages)
 library('writexl')
 library('xlsx')
 
-library('janeaustenr')
-library('rlang')
+#library('janeaustenr')
+#library('rlang')
 ```
 
 ```{r}
-input_data <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK/Ulyanovskaya_Oblast_2023.xlsx", sheetIndex=1, header = FALSE
+input_data1 <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK/Ulyanovskaya_Oblast_2021.xlsx", sheetIndex=1, header = FALSE
+   )
+input_data2 <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK/Ulyanovskaya_Oblast_2022.xlsx", sheetIndex=1, header = FALSE
+   )
+input_data3 <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK/Ulyanovskaya_Oblast_2023.xlsx", sheetIndex=1, header = FALSE
    )
 ```
+```{r}
+#input_data1 <- input_data1 %>% mutate(doc_id = 1)
+#input_data2 <- input_data2 %>% mutate(doc_id = 2)
+#input_data3 <- input_data3 %>% mutate(doc_id = 3)
+#input_data_all <- rbind(input_data1, input_data2, input_data3)
+```
+
 
 ```{r}
 female_names_rus <- read.csv("/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Course_work_3d_course_First/Data/female_names_rus.txt", header=FALSE)
@@ -28,9 +39,7 @@ male_names_rus <- read.csv("/Users/DmitryKonorov/Desktop/Основная_уче
 male_surnames_rus <- read.csv("/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Course_work_3d_course_First/Data/male_surnames_rus.txt", header=FALSE)
 ```
 
-```{r}
-corp_city_df <- VCorpus(VectorSource(input_data))
-```
+
 
 ```{r}
 extra_stop_words <- c('и','димитровграда', 'димитровград', 'ульяновскаяобласть', 'ульяновск', 'ульяновский', 'саранск', 'саранска', 'мордовие', 'рм', 'рма', 'мордовия', 'мордовский', 'заец', 'idюрий', 'главамарийэл', 'марий', 'эл', 'марийэл', 'эть', 'васил', 'чурин', 'кировский', 'кировскаяобласть', 'вятский', 'мельниченко', 'месяц', 'оренбургнуть', 'объясняемрф', 'провести', 'инвестор', 'вести', 'реализация', 'башкортостанный', 'радий', 'подписать', 'проект', 'пермский', 'пермскийкрай', 'край', 'прикамья', 'краевой', 'задача', 'важно', 'оренбуржец', 'оренбург', 'новость', 'подчеркнуть', 'оренбуржье', 'оренбургский', 'оренбургскаяобласть', 'поддержка', 'часть', 'км', 'валерийрадаеть', 'олегнуть', 'должен', 'около', 'рассказать', 'глава', 'губернатор', 'развитие', 'январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь', 'город', 'ecom', 'казань', 'подробность', 'подробный', 'радия', 'процент', 'уф', 'часть', 'вопрос', 'делать', 'сделать', 'благодаря', 'участие', 'пройти', 'идти', 'создать', 'создавать', 'дать',  'рамка', 'место', 'первый', 'получить', 'удмуртия', 'радай', 'юлие', 'пензенский', 'пенза', 'пензенскаяобласть', 'новый', 'лучший', 'самый', 'работа', 'рабочий', 'работать', 'региональный', 'нижегородскаяобладать', 'clubнижегородский', 'нижегородскаяобласть', 'нижегородский', 'нижний', 'новгород', 'чувашия', 'чувашие', 'обть', "бaшҡортостать", "бaшҡортостан", 'командахабиров', 'рб', 'миллиард', 'башкирия', 'башкортостан', 'башкортостана', 'мый', 'аный', 'мухаметшина', 'мухаметшин', 'реть', 'рф', 'день', 'отметить', 'число', 'миллион', 'ход', 'президент','страна', 'тысяча', 'рубль', 'доллар', 'район', 'итог', 'татарстан', 'татарстать', 'российский', 'ма', 'область', 'республика', 'саратовский', 'татарстан', 'татарстана', 'самарский','экономический', 'экономика', 'регион', 'год', "миннихан", "рт", "россия", "рустам", "руст", 'россия', 'конкурентоспособность', 'инновация', 'инвестиция', 'инвестиционный', 'рустамминнихан', 'дмитрий', 'азаров', 'саратовскаяобласть', 'саратовская', 'самарскаяобласть', 'азар', 'стать', 'rn«', 'твой', 'сих', 'ком', 'свой',
@@ -55,11 +64,20 @@ corpus_to_use %>%
 ```
 
 ```{r}
-corp_city_df <- clean_corpus(corp_city_df)
+corp_city_df1 <- VCorpus(VectorSource(input_data1))
+corp_city_df2 <- VCorpus(VectorSource(input_data2))
+corp_city_df3 <- VCorpus(VectorSource(input_data3))
+```
+```{r}
+corp_city_df1 <-  clean_corpus(corp_city_df1)
+corp_city_df2 <-  clean_corpus(corp_city_df2)
+corp_city_df3 <-  clean_corpus(corp_city_df3)
 ```
 
 ```{r}
-corp_city_df[["1"]][["content"]] <- gsub("[\U{1F600}-\U{1F64F}\U{1F300}-\U{1F5FF}\U{1F680}-\U{1F6FF}\U{1F1E0}-\U{1F1FF}\U{2500}-\U{2BEF}\U{2702}-\U{27B0}\U{24C2}-\U{1F251}\U{1f926}-\U{1f937}\U{10000}-\U{10ffff}\u{2640}-\u{2642}\u{2600}-\u{2B55}\u{200d}\u{23cf}\u{23e9}\u{231a}\u{fe0f}\u{3030}]", "", corp_city_df[["1"]][["content"]], perl = TRUE)
+corp_city_df1[["1"]][["content"]] <- gsub("[\U{1F600}-\U{1F64F}\U{1F300}-\U{1F5FF}\U{1F680}-\U{1F6FF}\U{1F1E0}-\U{1F1FF}\U{2500}-\U{2BEF}\U{2702}-\U{27B0}\U{24C2}-\U{1F251}\U{1f926}-\U{1f937}\U{10000}-\U{10ffff}\u{2640}-\u{2642}\u{2600}-\u{2B55}\u{200d}\u{23cf}\u{23e9}\u{231a}\u{fe0f}\u{3030}]", "", corp_city_df1[["1"]][["content"]], perl = TRUE)
+corp_city_df2[["1"]][["content"]] <- gsub("[\U{1F600}-\U{1F64F}\U{1F300}-\U{1F5FF}\U{1F680}-\U{1F6FF}\U{1F1E0}-\U{1F1FF}\U{2500}-\U{2BEF}\U{2702}-\U{27B0}\U{24C2}-\U{1F251}\U{1f926}-\U{1f937}\U{10000}-\U{10ffff}\u{2640}-\u{2642}\u{2600}-\u{2B55}\u{200d}\u{23cf}\u{23e9}\u{231a}\u{fe0f}\u{3030}]", "", corp_city_df2[["1"]][["content"]], perl = TRUE)
+corp_city_df3[["1"]][["content"]] <- gsub("[\U{1F600}-\U{1F64F}\U{1F300}-\U{1F5FF}\U{1F680}-\U{1F6FF}\U{1F1E0}-\U{1F1FF}\U{2500}-\U{2BEF}\U{2702}-\U{27B0}\U{24C2}-\U{1F251}\U{1f926}-\U{1f937}\U{10000}-\U{10ffff}\u{2640}-\u{2642}\u{2600}-\u{2B55}\u{200d}\u{23cf}\u{23e9}\u{231a}\u{fe0f}\u{3030}]", "", corp_city_df3[["1"]][["content"]], perl = TRUE)
 ```
 
 ```{r}
@@ -75,9 +93,14 @@ gsd_model <- udpipe_load_model(file = gsd_model_raw$file_model)
 ```
 
 ```{r}
-x <- udpipe_annotate(gsd_model, x = corp_city_df[["1"]][["content"]],  parser = "none")
-x <- as.data.frame(x)
-str(x$lemma)
+x1 <- udpipe_annotate(gsd_model, x = corp_city_df1[["1"]][["content"]],  parser = "none")
+x1 <- as.data.frame(x1)
+
+x2 <- udpipe_annotate(gsd_model, x = corp_city_df2[["1"]][["content"]],  parser = "none")
+x2 <- as.data.frame(x2)
+
+x3 <- udpipe_annotate(gsd_model, x = corp_city_df3[["1"]][["content"]],  parser = "none")
+x3 <- as.data.frame(x3)
 ```
 
 среднее соличество слов в предложении до удаления стоп-слов
@@ -88,9 +111,17 @@ nrow(x) / length(unique(x$sentence))
 
 ```{r}
 # x <- VCorpus(VectorSource(x$lemma))
-x$lemma <- noquote(x$lemma)
-x$lemma <- str_replace_all(x$lemma, "[[:punct:]]", "")
-tmp <- x$lemma
+x1$lemma <- noquote(x1$lemma)
+x1$lemma <- str_replace_all(x1$lemma, "[[:punct:]]", "")
+tmp1 <- x1$lemma
+
+x2$lemma <- noquote(x2$lemma)
+x2$lemma <- str_replace_all(x2$lemma, "[[:punct:]]", "")
+tmp2 <- x2$lemma
+
+x3$lemma <- noquote(x3$lemma)
+x3$lemma <- str_replace_all(x3$lemma, "[[:punct:]]", "")
+tmp3 <- x3$lemma
 ```
 
 ```{r}
@@ -98,25 +129,58 @@ stopwords_combined <- paste(c(stopwords("russian"), extra_stop_words,
                               tolower(male_names_rus$V1), 
                               tolower(male_surnames_rus$V1), 
                               tolower(female_names_rus$V1)), collapse = "|")
-tmp <- str_replace_all(x$lemma, paste("\\b(", stopwords_combined, ")\\b"), "")
+tmp1 <- str_replace_all(x1$lemma, paste("\\b(", stopwords_combined, ")\\b"), "")
+tmp2 <- str_replace_all(x2$lemma, paste("\\b(", stopwords_combined, ")\\b"), "")
+tmp3 <- str_replace_all(x3$lemma, paste("\\b(", stopwords_combined, ")\\b"), "")
 #cleaned_lemma <- gsub(paste0("\\b(", stopwords_combined, ")\\b"), "", x$lemma)
 ```
 
 ```{r}
-tmp <- str_replace_all(tmp, '№', '')
-tmp <- str_replace_all(tmp, '−', '')
-tmp <- str_replace_all(tmp, '—', '')
+tmp1 <- str_replace_all(tmp1, '№', '')
+tmp1 <- str_replace_all(tmp1, '−', '')
+tmp1 <- str_replace_all(tmp1, '—', '')
+
+tmp2 <- str_replace_all(tmp2, '№', '')
+tmp2 <- str_replace_all(tmp2, '−', '')
+tmp2 <- str_replace_all(tmp2, '—', '')
+
+tmp3 <- str_replace_all(tmp3, '№', '')
+tmp3 <- str_replace_all(tmp3, '−', '')
+tmp3 <- str_replace_all(tmp3, '—', '')
 ```
 
 ```{r}
-tmp <- str_replace_all(tmp, 'правительстворазвитие', 'правительство')
-tmp <- str_replace_all(tmp, 'правительстворб', 'правительство')
-tmp <- str_replace_all(tmp, 'цифровый', 'цифровой')
-tmp <- str_replace_all(tmp, 'научныймощность', 'научный мощность')
-tmp <- str_replace_all(tmp, 'club', '')
-tmp <- str_replace_all(tmp, 'правительствомарийэть', 'правительство')
-tmp <- str_replace_all(tmp, 'цура', 'цур')
-tmp <- tmp[sapply(tmp, nchar) > 0]
+tmp1 <- str_replace_all(tmp1, 'правительстворазвитие', 'правительство')
+tmp1 <- str_replace_all(tmp1, 'правительстворб', 'правительство')
+tmp1 <- str_replace_all(tmp1, 'цифровый', 'цифровой')
+tmp1 <- str_replace_all(tmp1, 'научныймощность', 'научный мощность')
+tmp1 <- str_replace_all(tmp1, 'club', '')
+tmp1 <- str_replace_all(tmp1, 'правительствомарийэть', 'правительство')
+tmp1 <- str_replace_all(tmp1, 'цура', 'цур')
+tmp1 <- tmp1[sapply(tmp1, nchar) > 0]
+
+tmp2 <- str_replace_all(tmp2, 'правительстворазвитие', 'правительство')
+tmp2 <- str_replace_all(tmp2, 'правительстворб', 'правительство')
+tmp2 <- str_replace_all(tmp2, 'цифровый', 'цифровой')
+tmp2 <- str_replace_all(tmp2, 'научныймощность', 'научный мощность')
+tmp2 <- str_replace_all(tmp2, 'club', '')
+tmp2 <- str_replace_all(tmp2, 'правительствомарийэть', 'правительство')
+tmp2 <- str_replace_all(tmp2, 'цура', 'цур')
+tmp2 <- tmp2[sapply(tmp2, nchar) > 0]
+
+tmp3 <- str_replace_all(tmp3, 'правительстворазвитие', 'правительство')
+tmp3 <- str_replace_all(tmp3, 'правительстворб', 'правительство')
+tmp3 <- str_replace_all(tmp3, 'цифровый', 'цифровой')
+tmp3 <- str_replace_all(tmp3, 'научныймощность', 'научный мощность')
+tmp3 <- str_replace_all(tmp3, 'club', '')
+tmp3 <- str_replace_all(tmp3, 'правительствомарийэть', 'правительство')
+tmp3 <- str_replace_all(tmp3, 'цура', 'цур')
+tmp3 <- tmp3[sapply(tmp3, nchar) > 0]
+
+```
+```{r}
+TermDocumentMatrix(VectorSource(c(paste(tmp1, sep=' '), paste(tmp2, sep=' '), paste(tmp3, sep=' '))))
+View(as.matrix(TermDocumentMatrix(VectorSource(c(paste(tmp1, sep=' '), paste(tmp2, sep=' '), paste(tmp3, sep=' '))))))
 ```
 
 среднее количество слов в предложении после удаления стоп-слов
@@ -126,10 +190,20 @@ length(tmp) / length(unique(x$sentence))
 ```
 
 ```{r}
-v <- sort(table(tmp), decreasing = TRUE)
-d <- as.data.frame(v)
-colnames(d) <- c("word", "freq")
-d$ratio <- d$freq / sum(d$freq) * 100
+v1 <- sort(table(tmp1), decreasing = TRUE)
+d1 <- as.data.frame(v1)
+colnames(d1) <- c("word", "freq")
+d1$ratio <- d1$freq / sum(d1$freq) * 100
+
+v2 <- sort(table(tmp2), decreasing = TRUE)
+d2 <- as.data.frame(v2)
+colnames(d2) <- c("word", "freq")
+d2$ratio <- d2$freq / sum(d2$freq) * 100
+
+v3 <- sort(table(tmp3), decreasing = TRUE)
+d3 <- as.data.frame(v3)
+colnames(d3) <- c("word", "freq")
+d3$ratio <- d3$freq / sum(d3$freq) * 100
 ```
 
 ```{r}
@@ -193,14 +267,26 @@ View(tf_idf %>% filter(lemma %in% c(as.character(d$word[1:15]))))
 
 ```
 
+
 ```{r}
-mask <- as_data_mask(tf_idf$lemma %in% d$word[1:15])
-eval_tidy(tf_idf$lemma, mask)
+d_all <- full_join(full_join(d1, d2, by='word'), d3, by='word')
+d_all <- d_all %>% replace(is.na (.), 0)
+tdm_df <- select(d_all, 'word', 'freq.x', 'freq.y', 'freq')
+names(tdm_df) <- c('word', 'd1', 'd2', 'd3')
+```
+```{r}
+
+#tdm <- TermDocumentMatrix(as.matrix(tdm_df))
+# View(as.matrix(weightTfIdf(tdm)))
 ```
 
-```{r}
-tdm <- TermDocumentMatrix(select(x, lemma, doc_id), control = list(weighting = function(x) weightTfIdf(x, normalize = TRUE)))
 
+
+
+
+```{r}
+#tdm <- TermDocumentMatrix(VCorpus(DataframeSource(select(x, doc_id, lemma))), control = list(weighting = weightTfIdf))
+#m_ <- as.matrix(tdm)
 # Преобразуем матрицу в датафрейм
-tfidf_df <- as.data.frame(as.matrix(tdm))
+#tfidf_df <- as.data.frame(as.matrix(tdm))
 ```
