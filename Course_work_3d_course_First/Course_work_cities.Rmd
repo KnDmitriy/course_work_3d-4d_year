@@ -194,20 +194,23 @@ v1 <- sort(table(tmp1), decreasing = TRUE)
 d1 <- as.data.frame(v1)
 colnames(d1) <- c("word", "freq")
 d1$ratio <- d1$freq / sum(d1$freq) * 100
+d1$tf <- d1$freq / nrow(d1) 
 
 v2 <- sort(table(tmp2), decreasing = TRUE)
 d2 <- as.data.frame(v2)
 colnames(d2) <- c("word", "freq")
 d2$ratio <- d2$freq / sum(d2$freq) * 100
+d2$tf <- d2$freq / nrow(d2) 
 
 v3 <- sort(table(tmp3), decreasing = TRUE)
 d3 <- as.data.frame(v3)
 colnames(d3) <- c("word", "freq")
 d3$ratio <- d3$freq / sum(d3$freq) * 100
+d3$tf <- d3$freq / nrow(d3) 
 ```
 
 ```{r}
-top_n(d, 15)[1:15, ]
+# top_n(d, 15)[1:15, ]
 ```
 
 ```{r}
@@ -255,15 +258,15 @@ barplot(d[1:15,]$freq, las = 2, names.arg = d[1:15,]$word,
 ```
 
 ```{r}
-select(x, lemma, doc_id) %>%  bind_tf_idf(lemma, doc_id)
+#select(x, lemma, doc_id) %>%  bind_tf_idf(lemma, doc_id)
 
 ```
 
 ```{r}
-tidy_x <- select(x, doc_id, lemma) %>%  count(doc_id, lemma, sort = TRUE) 
-tf_idf <- tidy_x %>%
-  bind_tf_idf(lemma, doc_id, n) 
-View(tf_idf %>% filter(lemma %in% c(as.character(d$word[1:15]))))
+#tidy_x <- select(x, doc_id, lemma) %>%  count(doc_id, lemma, sort = TRUE) 
+#tf_idf <- tidy_x %>%
+#  bind_tf_idf(lemma, doc_id, n) 
+#View(tf_idf %>% filter(lemma %in% c(as.character(d$word[1:15]))))
 
 ```
 
@@ -271,9 +274,36 @@ View(tf_idf %>% filter(lemma %in% c(as.character(d$word[1:15]))))
 ```{r}
 d_all <- full_join(full_join(d1, d2, by='word'), d3, by='word')
 d_all <- d_all %>% replace(is.na (.), 0)
+tf_idf <- select(d_all, 'word', 'freq.x', 'tf.x', 'freq.y','tf.y', 'freq', 'tf')
+names(tf_idf) <- c('word', 'freq1', 'tf1', 'freq2', 'tf2', 'freq3', 'tf3')
+
 tdm_df <- select(d_all, 'word', 'freq.x', 'freq.y', 'freq')
-names(tdm_df) <- c('word', 'd1', 'd2', 'd3')
+names(tdm_df) <- c('word', 'freq1', 'freq2', 'freq3')
+#names(tdm_df) <- c('word', 'freq1', 'ratio1', 'tf1', 'freq2', 'ratio2', 'tf2', 'freq3', 'ratio3', 'tf3')
 ```
+```{r}
+tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2', 'freq3') != 0))
+tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
+```
+```{r}
+tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
+tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
+```
+```{r}
+tf_idf <- tf_idf %>% mutate(tf_idf1 = tf1 * idf)
+tf_idf <- tf_idf %>% mutate(tf_idf2 = tf2 * idf)
+tf_idf <- tf_idf %>% mutate(tf_idf3 = tf3 * idf)
+```
+
+```{r}
+tf_idf_only <- select(tf_idf, 'tf_idf1', 'tf_idf2', 'tf_idf3')
+cos.mat <- cosine(as.matrix(tf_idf_only))
+```
+```{r}
+View(cos.mat)
+```
+
+
 ```{r}
 
 #tdm <- TermDocumentMatrix(as.matrix(tdm_df))
