@@ -86,18 +86,16 @@ stopwords_combined <- load_stopwords()
 
 ui <- fluidPage(
   titlePanel("Анализ регионов по разным периодам"),
-  #actionButton("add", "Добавить вкладку", icon = icon("plus-circle")),
   tabsetPanel(id = "tabs",
               tabPanel("Период 1",
                        sidebarLayout(
                          sidebarPanel(
                            fileInput("file1", "Выберите Excel файл 1", accept = ".xlsx"),
                            actionButton("analyze1", "Анализировать файл 1"),
-                           downloadButton("downloadData1", "Скачать результаты анализа файла 1")
+                           
                          ),
                          mainPanel(
                            plotOutput("barPlot1"),
-                           #plotOutput("wordcloud1"),
                            wordcloud2Output("wordcloud1"),
                            tableOutput("wordTable1")
                          )
@@ -108,11 +106,10 @@ ui <- fluidPage(
                          sidebarPanel(
                            fileInput("file2", "Выберите Excel файл 2", accept = ".xlsx"),
                            actionButton("analyze2", "Анализировать файл 2"),
-                           downloadButton("downloadData2", "Скачать результаты анализа файла 2")
+                          
                          ),
                          mainPanel(
                            plotOutput("barPlot2"),
-                           #plotOutput("wordcloud2"),
                            wordcloud2Output("wordcloud2"),
                            tableOutput("wordTable2")
                          )
@@ -123,11 +120,10 @@ ui <- fluidPage(
                          sidebarPanel(
                            fileInput("file3", "Выберите Excel файл 3", accept = ".xlsx"),
                            actionButton("analyze3", "Анализировать файл 3"),
-                           downloadButton("downloadData3", "Скачать результаты анализа файла 3")
+                           
                          ),
                          mainPanel(
                            plotOutput("barPlot3"),
-                           #plotOutput("wordcloud3"),
                            wordcloud2Output("wordcloud3"),
                            tableOutput("wordTable3")
                          )
@@ -143,22 +139,6 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   files_preprocessed_data <- reactiveValues()
-
-  data <- reactive({
-    get(input$barPlot1)
-  })
-  
-  output$downloadData <- downloadHandler(
-    filename = function() {
-      # Use the selected dataset as the suggested file name
-      paste0(input$file1, ".csv")
-    },
-    content = function(file) {
-      # Write the dataset to the `file` that will be downloaded
-      write.csv(data(), file)
-    }
-  )
-
   clean_corpus <- function(corpus_to_use){
     corpus_to_use %>%
       tm_map(removePunctuation) %>%
@@ -167,7 +147,6 @@ server <- function(input, output, session) {
       tm_map(removeNumbers) %>%
       tm_map(content_transformer(tolower)) 
   }
-
   get_preprocessed_texts_word_list <- function(file) {
     req(file)
     input_data <- read_excel(file$datapath)
@@ -216,7 +195,7 @@ server <- function(input, output, session) {
       head(word_freq, 10)
     })
     output[[wordcloud_output]] <- renderWordcloud2({
-      wordcloud2a(word_freq, size = 0.4)
+      wordcloud2a(word_freq, size = 0.45)
     })
     return(d)
   }
@@ -228,9 +207,6 @@ server <- function(input, output, session) {
   })
   observeEvent(input$analyze3, {
     files_preprocessed_data[["df_3"]] <- analyze_and_render(input[["file3"]], "barPlot3", "wordTable3", "wordcloud3")
-  })
-  observeEvent(input[[paste("file", rv$counter, sep='')]], {
-    analyze_and_render(input[[paste("file", rv$counter, sep='')]], paste("barPlot", rv$counter, sep=''), paste("wordTable", rv$counter, sep=''), paste("wordcloud", rv$counter, sep=''))
   })
   observeEvent(input[["compare_files_btn"]], {
     d_all <- Filter(Negate(is.null), list(files_preprocessed_data[["df_1"]], files_preprocessed_data[["df_2"]], files_preprocessed_data[["df_3"]])) 
