@@ -97,6 +97,7 @@ ui <- fluidPage(
                          mainPanel(
                            plotOutput("barPlot1"),
                            wordcloud2Output("wordcloud1"),
+                           #plotOutput("wordcloud1"),
                            tableOutput("wordTable1")
                          )
                        )
@@ -194,6 +195,9 @@ server <- function(input, output, session) {
       colnames(word_freq) <- c("Слово", "Частота встречаемости слова в корпусе текстов")
       head(word_freq, 10)
     })
+    # output[[wordcloud_output]] <- renderPlot({
+    #     wordcloud(d$word, d$freq, colors=brewer.pal(8, "Dark2"))
+    #   })
     output[[wordcloud_output]] <- renderWordcloud2({
       wordcloud2a(word_freq, size = 0.45)
     })
@@ -214,7 +218,7 @@ server <- function(input, output, session) {
     if (length(d_all) == 1) {
     }
     if (length(d_all) == 2) {
-      d_all <- full_join(d1, d2, by='word')
+      d_all <- full_join(d_all[[1]], d_all[[2]], by='word')
       d_all <- d_all %>% replace(is.na (.), 0)
       tf_idf <- select(d_all, 'word', 'freq.x', 'tf.x', 'freq.y','tf.y')
       names(tf_idf) <- c('word', 'freq1', 'tf1', 'freq2', 'tf2')
@@ -228,10 +232,11 @@ server <- function(input, output, session) {
       tf_idf <- tf_idf %>% mutate(tf_idf2 = tf2 * idf)
       tf_idf_only <- select(tf_idf, 'tf_idf1', 'tf_idf2')
       names(tf_idf_only) <- c("Период 1", "Период 2")
-      cos.mat <- cosine(as.matrix(tf_idf_only))
+      cos.mat <- cosine(as.matrix(tf_idf_only))  # Remove the first column for cosine calculation
+
     }
     if (length(d_all) == 3) {
-      d_all <- full_join(full_join(d1, d2, by='word'), d3, by='word')
+      d_all <- full_join(full_join(d_all[[1]], d_all[[2]], by='word'), d_all[[3]], by='word')
       d_all <- d_all %>% replace(is.na (.), 0)
       tf_idf <- select(d_all, 'word', 'freq.x', 'tf.x', 'freq.y','tf.y', 'freq', 'tf')
       names(tf_idf) <- c('word', 'freq1', 'tf1', 'freq2', 'tf2', 'freq3', 'tf3')
