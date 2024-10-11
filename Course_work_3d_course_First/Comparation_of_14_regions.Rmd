@@ -18,17 +18,17 @@ library('xlsx')
 ```
 
 ```{r}
-input_data_Astrahan <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Астраханская область_посты_2023.xlsx", sheetIndex=1, header = FALSE)
-input_data_Bashkortastan <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Башкортостан_посты_2023.xlsx", sheetIndex=1, header = FALSE)
-input_data_Kirovskaya <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Кировская область_посты_2023.xlsx", sheetIndex=1, header = FALSE)
-input_data_MariEl <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Марий Эл_посты_2023.xlsx", sheetIndex=1, header = FALSE)
-input_data_Mordovia <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Мордовия_посты_2023.xlsx", sheetIndex=1, header = FALSE)
-input_data_Nijegorodskaya <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Нижегородская область_посты_2023.xlsx", sheetIndex=1, header = FALSE)
-input_data_Nijegorodskaya <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Нижегородская область_посты_2023.xlsx", sheetIndex=1, header = FALSE)
-input_data_Orenburgskaya <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Оренбургская область_посты_2023.xlsx", sheetIndex=1, header = FALSE)
-input_data_Penzenskaya <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Пензенская область_посты_2023.xlsx", sheetIndex=1, header = FALSE)
-input_data_Permskiy <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Пермский край_посты_2023.xlsx", sheetIndex=1, header = FALSE)
-input_data_Samarskaya <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Пермский край_посты_2023.xlsx", sheetIndex=1, header = FALSE)
+# input_data_Astrahan <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Астраханская область_посты_2023.xlsx", sheetIndex=1, header = FALSE)
+# input_data_Bashkortastan <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Башкортостан_посты_2023.xlsx", sheetIndex=1, header = FALSE)
+# input_data_Kirovskaya <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Кировская область_посты_2023.xlsx", sheetIndex=1, header = FALSE)
+# input_data_MariEl <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Марий Эл_посты_2023.xlsx", sheetIndex=1, header = FALSE)
+# input_data_Mordovia <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Мордовия_посты_2023.xlsx", sheetIndex=1, header = FALSE)
+# input_data_Nijegorodskaya <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Нижегородская область_посты_2023.xlsx", sheetIndex=1, header = FALSE)
+# input_data_Nijegorodskaya <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Нижегородская область_посты_2023.xlsx", sheetIndex=1, header = FALSE)
+# input_data_Orenburgskaya <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Оренбургская область_посты_2023.xlsx", sheetIndex=1, header = FALSE)
+# input_data_Penzenskaya <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Пензенская область_посты_2023.xlsx", sheetIndex=1, header = FALSE)
+# input_data_Permskiy <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Пермский край_посты_2023.xlsx", sheetIndex=1, header = FALSE)
+# input_data_Samarskaya <- read.xlsx( "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/Пермский край_посты_2023.xlsx", sheetIndex=1, header = FALSE)
 
 ```
 
@@ -52,6 +52,7 @@ for (i in seq_along(file_paths)) {
 names(all_input_data) <- gsub(".xlsx", '', file_names)
 names(all_input_data)
 ```
+
 
 
 
@@ -93,10 +94,22 @@ corpus_to_use %>%
 }
 ```
 ```{r}
-corp_city_dfs <- VCorpus(VectorSource(all_input_data))
-corp_city_dfs <- lapply(corp_city_dfs, clean_corpus)
+# corp_city_dfs <- VCorpus(VectorSource(all_input_data))
+corp_city_dfs <- all_input_data
+```
+```{r}
+# corp_city_dfs <- VCorpus(VectorSource(all_input_data))
+for (i in seq_along(corp_city_dfs)) {
+    corp_city_dfs[[i]] <- VCorpus(VectorSource(corp_city_dfs[[i]]))
+}
 ```
 
+
+```{r}
+for (i in seq_along(corp_city_dfs)) {
+    corp_city_dfs[[i]] <- clean_corpus(corp_city_dfs[[i]])
+}
+```
 
 ```{r}
 # corp_city_df1 <- VCorpus(VectorSource(input_data1))
