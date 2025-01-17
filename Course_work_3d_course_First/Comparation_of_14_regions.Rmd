@@ -5,13 +5,13 @@ install_or_load_pack <- function(pack){
      install.packages(create.pkg, dependencies = TRUE)
      sapply(pack, require, character.only = TRUE)
 }
-packages <- c("ggplot2",  "data.table", "wordcloud", "tm", "wordcloud2", "tidytext", "devtools", "dplyr", 'tidyverse', 'readxl', 'udpipe', 'writexl', 'xlsx', 'rlang', 'plyr', 'lsa')
+packages <- c("ggplot2",  "data.table", "wordcloud", "tm", "wordcloud2", "tidytext", "devtools", "dplyr", 'tidyverse', 'readxl', 'udpipe', 'rlang', 'plyr', 'lsa', 'rJava', 'openxlsx')
 install_or_load_pack(packages)
 ```
 
 ```{r}
-library('writexl')
-library('xlsx')
+#library('writexl')
+#library('xlsx')
 
 #library('janeaustenr')
 #library('rlang')
@@ -33,7 +33,9 @@ library('xlsx')
 ```
 
 ```{r}
-dir_path <- "/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Данные из сообществ VK 2024/ПФО/14 регионов, 2023 год"
+# dir_path <- "/Users/DmitryKonorov/Desktop/Основная_учеба/Курсовая_3й-4й_курс/Все данные/Данные из сообществ VK, собранные в 2024/ПФО/14 регионов, 2023 год"
+# dir_path <- "/Users/DmitryKonorov/Desktop/Основная_учеба/Курсовая_3й-4й_курс/Все данные/Малые_тестовые_данные"
+dir_path <- "/Users/DmitryKonorov/Desktop/Основная_учеба/Курсовая_3й-4й_курс/Все данные/Данные из сообществ VK, собранные в 2024/ПФО/14 регионов, 2023 год"
 file_names <- list.files(dir_path, full.names = FALSE)
 print(file_names)
 file_paths <- list.files(dir_path, full.names = TRUE)
@@ -42,15 +44,31 @@ print(file_paths)
 
 
 ```{r}
+
+# all_input_data <- list()
+# for (i in seq_along(file_paths)) {
+#     all_input_data[[i]] <- read.xlsx(file = file_paths[i], sheetIndex = 1, header = FALSE)
+# }
+
+```
+
+```{r}
 all_input_data <- list()
 for (i in seq_along(file_paths)) {
-    all_input_data[[i]] <- read.xlsx(file = file_paths[i], sheetIndex = 1, header = FALSE)
+    all_input_data[[i]] <- as.data.frame(read_excel(file_paths[i], col_names = FALSE))
 }
 ```
+
 
 ```{r}
 names(all_input_data) <- gsub(".xlsx", '', file_names)
 names(all_input_data)
+```
+
+```{r}
+# test_data_aaa <- list()
+# test_data_aaa[[2]] <- read_excel(file_paths[2], col_names = FALSE)
+# test_data_aaa
 ```
 
 
@@ -65,9 +83,9 @@ names(all_input_data)
 
 
 ```{r}
-female_names_rus <- read.csv("/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Course_work_3d_course_First/Data/female_names_rus.txt", header=FALSE)
-male_names_rus <- read.csv("/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Course_work_3d_course_First/Data/male_names_rus.txt", header=FALSE)
-male_surnames_rus <- read.csv("/Users/DmitryKonorov/Desktop/Основная_учеба/3й_курс/Курсовая_3й_курс/Course_work_3d_course_First/Data/male_surnames_rus.txt", header=FALSE)
+female_names_rus <- read.csv("/Users/DmitryKonorov/Desktop/Основная_учеба/Курсовая_3й-4й_курс/Course_work_3d_course_First/Data/female_names_rus.txt", header=FALSE)
+male_names_rus <- read.csv("/Users/DmitryKonorov/Desktop/Основная_учеба/Курсовая_3й-4й_курс/Course_work_3d_course_First/Data/male_names_rus.txt", header=FALSE)
+male_surnames_rus <- read.csv("/Users/DmitryKonorov/Desktop/Основная_учеба/Курсовая_3й-4й_курс/Course_work_3d_course_First/Data/male_surnames_rus.txt", header=FALSE)
 ```
 
 
@@ -390,8 +408,14 @@ for (i in seq_along(freq_ratio_dfs)) {
 ```
 
 ```{r}
-all_regions_tf_idf_df <- join_all(freq_ratio_dfs, by = 'word', type = 'left')
+all_regions_tf_idf_df <- join_all(freq_ratio_dfs, by = 'word', type = 'full', match = "all")
 ```
+
+```{r}
+# all_regions_tf_idf_df <- full_join()
+```
+
+
 ```{r}
 all_regions_tf_idf_df <- all_regions_tf_idf_df %>% replace(is.na (.), 0)
 ```
@@ -429,7 +453,7 @@ cos.mat <- cosine(as.matrix(tf_idf_only))
 ```{r}
 View(cos.mat)
 write.xlsx(cos.mat, 
-paste0(dir_path, '/Сравнение с помощью косинусной меры близости.xlsx', sep = ""), sheetName = "Sheet1", append=TRUE)
+paste0(dir_path, '/Сравнение с помощью косинусной меры близости.xlsx', sep = ""), sheetName = "Sheet1", append=TRUE, colNames = TRUE, rowNames = TRUE)
 ```
 
 
