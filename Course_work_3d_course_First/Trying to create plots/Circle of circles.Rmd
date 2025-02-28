@@ -1,0 +1,64 @@
+---
+title: "Circle of circles"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+library(grid)
+
+# Параметры круга
+n_circles <- 6  # количество кругов
+radius <- 3     # радиус окружности
+numbers <- 1:n_circles  # числа в кругах
+
+# Координаты кругов
+angles <- seq(0, 2 * pi, length.out = n_circles + 1)[-n_circles - 1]
+x <- radius * cos(angles)
+y <- radius * sin(angles)
+
+# Данные для графика
+circle_data <- data.frame(
+  x = x,
+  y = y,
+  label = numbers
+)
+
+# Создание базового графика
+p <- ggplot() +
+  geom_point(data = circle_data, aes(x = x, y = y), size = 8, color = "black", fill = "lightblue", shape = 21) +
+  geom_text(data = circle_data, aes(x = x, y = y, label = label), size = 5) +
+  coord_fixed() +
+  theme_void()
+
+# Добавление стрелок
+add_arrows <- function(x1, y1, x2, y2, solid = TRUE) {
+  line_type <- if (solid) 1 else 2  # 1 - сплошная линия, 2 - пунктирная
+  grid.lines(x = unit(c(x1, x2), "native"), 
+             y = unit(c(y1, y2), "native"), 
+             gp = gpar(col = "black", lwd = 2, lty = line_type),
+             arrow = arrow(type = "closed", length = unit(0.15, "inches")))
+}
+
+# Вывод базового графика
+print(p)
+
+# Координаты для стрелок
+arrow_data <- data.frame(
+  x1 = x,
+  y1 = y,
+  x2 = c(x[-1], x[1]),  # стрелки ведут к следующему кругу
+  y2 = c(y[-1], y[1]),
+  solid = c(TRUE, FALSE, TRUE, FALSE, TRUE, TRUE)  # чередуем тип стрелок
+)
+
+grid.newpage()
+grid.draw(ggplotGrob(p))
+
+# Добавление стрелок
+for (i in 1:nrow(arrow_data)) {
+  add_arrows(arrow_data$x1[i], arrow_data$y1[i], arrow_data$x2[i], arrow_data$y2[i], arrow_data$solid[i])
+}
+
+```
+
