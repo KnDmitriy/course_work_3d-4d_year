@@ -65,10 +65,10 @@ wordcloud2a <- function (data, size = 1, minSize = 0, gridSize = 0, fontFamily =
 
 
 load_stopwords <- function() {
-
-  female_names_rus <- read.csv("/Users/DmitryKonorov/Desktop/Основная_учеба/Курсовая_3й-4й_курс/Course_work_3d_course_First/Data/female_names_rus.txt", header=FALSE)
-  male_names_rus <- read.csv("/Users/DmitryKonorov/Desktop/Основная_учеба/Курсовая_3й-4й_курс/Course_work_3d_course_First/Data/male_names_rus.txt", header=FALSE)
-  male_surnames_rus <- read.csv("/Users/DmitryKonorov/Desktop/Основная_учеба/Курсовая_3й-4й_курс/Course_work_3d_course_First/Data/male_surnames_rus.txt", header=FALSE)
+  
+  female_names_rus <- read.csv("female_names_rus.txt", header=FALSE)
+  male_names_rus <- read.csv("male_names_rus.txt", header=FALSE)
+  male_surnames_rus <- read.csv("male_surnames_rus.txt", header=FALSE)
   stop_words_expanded <- c('и', 'й', 'г', 'единаяроссия', 'единый', 'время', 'территория', 'димитровграда', 'димитровград', 
                            'чебоксар', 'ядринский', 'житель', 'компания', 'министр', 'дом', 'общественный',
                            'программа', 'мероприятие', 'условие', 'ситуация', 'гражданин', 'группа', 'организация',
@@ -166,7 +166,7 @@ load_stopwords <- function() {
                            'сг', 'например', 'сообщить', 'сообщать', 'среди', 'нть', 'пер', 'зспермь', 'края', 'ради', 'назвать', 'важный',
                            'ик', 'ульяновсок', 'ульяновска', 'russia', 'reg', 'видео', 'russianpolice', 'mvd', 'police', 'ульяновскаяобласть', 'ульяновскаобласть',
                            'русский', 'личный'
-                           )
+  )
   
   
   stop_words_short <- c('и', 'й', 'г', 'единаяроссия', 'единый', 'время', 'территория', 'димитровграда', 'димитровград', 
