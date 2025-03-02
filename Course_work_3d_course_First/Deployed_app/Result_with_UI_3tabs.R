@@ -375,6 +375,7 @@ server <- function(input, output, session) {
       
       tdm_df_with_dynamism <- tdm_df
       tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq2 - tdm_df_with_dynamism$freq1 + 1) / (tdm_df_with_dynamism$freq1 + 1)
+      tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq1 + tdm_df_with_dynamism$freq2
       
       tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
       tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
@@ -396,7 +397,7 @@ server <- function(input, output, session) {
       
       tdm_df_with_dynamism <- tdm_df
       tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1 + 1) / (tdm_df_with_dynamism$freq1 + 1)
-      
+      tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq1 + tdm_df_with_dynamism$freq2 + tdm_df_with_dynamism$freq3
       
       tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
       tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
@@ -407,8 +408,20 @@ server <- function(input, output, session) {
       names(tf_idf_only) <- c("Период 1", "Период 2", "Период 3")
       cos.mat <- cosine(as.matrix(tf_idf_only))
     }
+    
+    tdm_df_with_dynamism$freq_all_normalized <- (tdm_df_with_dynamism$freq_all + 1) / max(tdm_df_with_dynamism$freq_all + 1)
+    tdm_df_with_dynamism$dynamism_normalized <- (tdm_df_with_dynamism$dynamism + 1) / max(tdm_df_with_dynamism$dynamism + 1)
+    tdm_df_with_dynamism$freq_all_and_dynamism_normalized <- tdm_df_with_dynamism$dynamism_normalized + tdm_df_with_dynamism$freq_all_normalized
+    # Сортировка датафрейма по столбцу freq_all_and_dynamism_normalized по убыванию
+    tdm_df_with_dynamism <- tdm_df_with_dynamism[order(tdm_df_with_dynamism$freq_all_and_dynamism_normalized, decreasing = TRUE),] 
+    
     output$compareFilesTable <- renderTable({
       cos.mat
+    })
+    output$dynamicPlot <- renderPlot({
+      amount_of_words_in_plot <- 30
+      plot(tdm_df_with_dynamism$dynamism[1:amount_of_words_in_plot], tdm_df_with_dynamism$freq_all[1:amount_of_words_in_plot])
+      text(tdm_df_with_dynamism$dynamism[1:amount_of_words_in_plot], tdm_df_with_dynamism$freq_all[1:amount_of_words_in_plot], tdm_df_with_dynamism$word[1:amount_of_words_in_plot])
     })
   })
 }
