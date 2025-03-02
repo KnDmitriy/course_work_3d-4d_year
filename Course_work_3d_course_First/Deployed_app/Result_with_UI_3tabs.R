@@ -11,14 +11,7 @@ install_or_load_pack(packages)
 # загрузки файлов и их сравнения.
 # Убраны пакеты wordcloud, Rcpp
 
-library(shiny)
-library(readxl)
-library(plyr)
-library(dplyr)
-library(tidytext)
-library(ggplot2)
-library(wordcloud2)
-library(lsa)
+
 
 wordcloud2a <- function (data, size = 1, minSize = 0, gridSize = 0, fontFamily = "Segoe UI", 
                          fontWeight = "bold", color = "random-dark", backgroundColor = "white", 
