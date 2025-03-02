@@ -269,7 +269,7 @@ ui <- fluidPage(
                        
                        actionButton("compareFilesBtn", "Сравнить введенные файлы"),
                        tableOutput("compareFilesTable"),
-                       plotOutput("significancePlot")
+                       plotOutput("dynamicPlot")
               )
   )
 )
@@ -372,6 +372,10 @@ server <- function(input, output, session) {
       names(tdm_df) <- c('word', 'freq1', 'freq2')
       tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2') != 0))
       tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
+      
+      tdm_df_with_dynamism <- tdm_df
+      tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq2 - tdm_df_with_dynamism$freq1 + 1) / (tdm_df_with_dynamism$freq1 + 1)
+      
       tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
       tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
       tf_idf <- tf_idf %>% mutate(tf_idf1 = tf1 * idf)
@@ -389,6 +393,11 @@ server <- function(input, output, session) {
       names(tdm_df) <- c('word', 'freq1', 'freq2', 'freq3')
       tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2', 'freq3') != 0))
       tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
+      
+      tdm_df_with_dynamism <- tdm_df
+      tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1 + 1) / (tdm_df_with_dynamism$freq1 + 1)
+      
+      
       tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
       tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
       tf_idf <- tf_idf %>% mutate(tf_idf1 = tf1 * idf)
