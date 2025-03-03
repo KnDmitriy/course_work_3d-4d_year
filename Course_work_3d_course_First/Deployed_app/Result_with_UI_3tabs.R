@@ -419,14 +419,20 @@ server <- function(input, output, session) {
       cos.mat
     })
     output$dynamicPlot <- renderPlot({
-      amount_of_words_in_plot <- 30
+      # Вывод графика без отображения слов на графике для всех терминов
+      plot(tdm_df_with_dynamism$dynamism, tdm_df_with_dynamism$freq_all, xlab = "Динамика", ylab = "Значимость")
+      
+      amount_of_words_in_plot <- 40
+      # Вывод графика с amount_of_words_in_plot слов с отображением слов
       # plot(tdm_df_with_dynamism$dynamism[1:amount_of_words_in_plot], tdm_df_with_dynamism$freq_all[1:amount_of_words_in_plot], xlab = "Динамика", ylab = "Значимость")
       # text(tdm_df_with_dynamism$dynamism[1:amount_of_words_in_plot], tdm_df_with_dynamism$freq_all[1:amount_of_words_in_plot], tdm_df_with_dynamism$word[1:amount_of_words_in_plot], cex = 0.8)
-      ggplot(tdm_df_with_dynamism[1:amount_of_words_in_plot, ], aes(x = dynamism, y = freq_all, label = word)) +
-        geom_point() +
-        geom_text_repel(max.overlaps = Inf) +
-        labs(x = "Динамика", y = "Значимость") +
-        theme_minimal()
+      
+      # Вывод графика для amount_of_words_in_plot слов без пересечений слов на графике
+      # ggplot(tdm_df_with_dynamism[1:amount_of_words_in_plot, ], aes(x = dynamism, y = freq_all, label = word)) +
+      #   geom_point() +
+      #   geom_text_repel(max.overlaps = Inf) +
+      #   labs(x = "Динамика", y = "Значимость") +
+      #   theme_minimal()
     })
   })
 }
