@@ -372,7 +372,7 @@ server <- function(input, output, session) {
       tdm_df_with_dynamism <- tdm_df
       tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq1 + tdm_df_with_dynamism$freq2
       # Базисный и цепной темпы прироста
-      tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq2 - tdm_df_with_dynamism$freq1 + 1) / (tdm_df_with_dynamism$freq1 + 1)
+      tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq2 - tdm_df_with_dynamism$freq1) / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)
       
       tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
       tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
@@ -397,7 +397,7 @@ server <- function(input, output, session) {
       # Базисный темп прироста
       # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1 + 1) / (tdm_df_with_dynamism$freq1 + 1)
       # Цепной темп прироста
-      tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq2 + 1) / (tdm_df_with_dynamism$freq1 + 1)
+      tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq2) / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)
       
       tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
       tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
@@ -409,11 +409,16 @@ server <- function(input, output, session) {
       cos.mat <- cosine(as.matrix(tf_idf_only))
     }
     
-    tdm_df_with_dynamism$freq_all_normalized <- (tdm_df_with_dynamism$freq_all + 1) / max(tdm_df_with_dynamism$freq_all + 1)
-    tdm_df_with_dynamism$dynamism_normalized <- (tdm_df_with_dynamism$dynamism + 1) / max(tdm_df_with_dynamism$dynamism + 1)
+    # ifelse(max(tdm_df_with_dynamism$freq_all) != 0, max(tdm_df_with_dynamism$freq_all), 1)  значит,
+    # Если max(tdm_df_with_dynamism$freq_all) != 0, то вернуть max(tdm_df_with_dynamism$freq_all),
+    # иначе вернуть 1.
+    tdm_df_with_dynamism$freq_all_normalized <- (tdm_df_with_dynamism$freq_all) / ifelse(max(tdm_df_with_dynamism$freq_all) != 0, max(tdm_df_with_dynamism$freq_all), 1)  
+    tdm_df_with_dynamism$dynamism_normalized <- (tdm_df_with_dynamism$dynamism) / ifelse(max(tdm_df_with_dynamism$dynamism) != 0, max(tdm_df_with_dynamism$dynamism), 1)  
     tdm_df_with_dynamism$freq_all_and_dynamism_normalized <- tdm_df_with_dynamism$dynamism_normalized + tdm_df_with_dynamism$freq_all_normalized
     # Сортировка датафрейма по столбцу freq_all_and_dynamism_normalized по убыванию
     tdm_df_with_dynamism <- tdm_df_with_dynamism[order(tdm_df_with_dynamism$freq_all_and_dynamism_normalized, decreasing = TRUE),] 
+    
+    
     
     output$compareFilesTable <- renderTable({
       cos.mat
