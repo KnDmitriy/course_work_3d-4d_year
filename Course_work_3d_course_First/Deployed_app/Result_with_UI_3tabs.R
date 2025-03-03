@@ -4,7 +4,7 @@ install_or_load_pack <- function(packs){
     install.packages(create.pkg, dependencies = TRUE)
   sapply(packs, library, character.only = TRUE)
 }
-packages <- c("ggplot2",  "data.table", "tm", "wordcloud2", "tidytext", "dplyr", 'tidyverse', 'readxl', 'udpipe', 'writexl', 'openxlsx', 'rlang')
+packages <- c("ggrepel", "ggplot2",  "data.table", "tm", "wordcloud2", "tidytext", "dplyr", 'tidyverse', 'readxl', 'udpipe', 'writexl', 'openxlsx', 'rlang')
 install_or_load_pack(packages)
 # Нужен ли пакет "Rcpp"? Все ли из подключаемых пакетов нужны? Как это проверить?
 # Проверить можно с помощью убирания пакета из загружаемых и попытки запуска программы,
@@ -315,6 +315,7 @@ server <- function(input, output, session) {
     tmp <- str_replace_all(tmp, 'полицияроссия', 'полиция')
     tmp <- str_replace_all(tmp, 'осуждеть', 'осуждать')
     tmp <- str_replace_all(tmp, 'умвд', 'мвд') 
+    tmp <- tmp[!grepl("http|vk", tmp)]  # Удаление терминов, содержащих http или vk
     tmp <- tmp[sapply(tmp, nchar) > 0]
     return(tmp)
   }
@@ -419,8 +420,13 @@ server <- function(input, output, session) {
     })
     output$dynamicPlot <- renderPlot({
       amount_of_words_in_plot <- 30
-      plot(tdm_df_with_dynamism$dynamism[1:amount_of_words_in_plot], tdm_df_with_dynamism$freq_all[1:amount_of_words_in_plot], xlab = "Динамика", ylab = "Значимость")
-      text(tdm_df_with_dynamism$dynamism[1:amount_of_words_in_plot], tdm_df_with_dynamism$freq_all[1:amount_of_words_in_plot], tdm_df_with_dynamism$word[1:amount_of_words_in_plot])
+      # plot(tdm_df_with_dynamism$dynamism[1:amount_of_words_in_plot], tdm_df_with_dynamism$freq_all[1:amount_of_words_in_plot], xlab = "Динамика", ylab = "Значимость")
+      # text(tdm_df_with_dynamism$dynamism[1:amount_of_words_in_plot], tdm_df_with_dynamism$freq_all[1:amount_of_words_in_plot], tdm_df_with_dynamism$word[1:amount_of_words_in_plot], cex = 0.8)
+      ggplot(tdm_df_with_dynamism[1:amount_of_words_in_plot, ], aes(x = dynamism, y = freq_all, label = word)) +
+        geom_point() +
+        geom_text_repel(max.overlaps = Inf) +
+        labs(x = "Динамика", y = "Значимость") +
+        theme_minimal()
     })
   })
 }
