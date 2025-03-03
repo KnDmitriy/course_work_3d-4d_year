@@ -371,8 +371,14 @@ server <- function(input, output, session) {
       
       tdm_df_with_dynamism <- tdm_df
       tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq1 + tdm_df_with_dynamism$freq2
-      # Базисный и цепной темпы прироста
+      # ???
       tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq2 - tdm_df_with_dynamism$freq1) / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)
+      
+      # Средний абсолютный прирост
+      tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq2 - tdm_df_with_dynamism$freq1) / 2
+      # Средний коэффициент роста (Средний темп роста)
+      # tdm_df_with_dynamism$dynamism <- sqrt((tdm_df_with_dynamism$freq3 / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)))
+      
       
       tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
       tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
@@ -394,10 +400,15 @@ server <- function(input, output, session) {
       
       tdm_df_with_dynamism <- tdm_df
       tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq1 + tdm_df_with_dynamism$freq2 + tdm_df_with_dynamism$freq3
-      # Базисный темп прироста
+      # ???
       # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1 + 1) / (tdm_df_with_dynamism$freq1 + 1)
-      # Цепной темп прироста
-      tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq2) / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)
+    
+      # Средний абсолютный прирост
+      tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1) / 2
+      # Средний коэффициент роста (Средний темп роста)
+      # tdm_df_with_dynamism$dynamism <- sqrt((tdm_df_with_dynamism$freq3 / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)))
+      
+      
       
       tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
       tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
@@ -427,7 +438,7 @@ server <- function(input, output, session) {
       # Вывод графика без отображения слов на графике для всех терминов
       plot(tdm_df_with_dynamism$dynamism, tdm_df_with_dynamism$freq_all, xlab = "Динамика", ylab = "Значимость")
       
-      amount_of_words_in_plot <- 40
+      amount_of_words_in_plot <- 30
       # Вывод графика с amount_of_words_in_plot слов с отображением слов
       # plot(tdm_df_with_dynamism$dynamism[1:amount_of_words_in_plot], tdm_df_with_dynamism$freq_all[1:amount_of_words_in_plot], xlab = "Динамика", ylab = "Значимость")
       # text(tdm_df_with_dynamism$dynamism[1:amount_of_words_in_plot], tdm_df_with_dynamism$freq_all[1:amount_of_words_in_plot], tdm_df_with_dynamism$word[1:amount_of_words_in_plot], cex = 0.8)
