@@ -264,7 +264,8 @@ ui <- fluidPage(
                        
                        actionButton("compareFilesBtn", "Сравнить проанализированные файлы"),
                        tableOutput("compareFilesTable"),
-                       plotOutput("dynamicPlot")
+                       plotOutput("dynamicPlotAll"),
+                       plotOutput("dynamicPlotLimited")
               )
   )
 )
@@ -434,21 +435,23 @@ server <- function(input, output, session) {
     output$compareFilesTable <- renderTable({
       cos.mat
     })
-    output$dynamicPlot <- renderPlot({
-      # Вывод графика без отображения слов на графике для всех терминов
-      plot(tdm_df_with_dynamism$dynamism, tdm_df_with_dynamism$freq_all, xlab = "Динамика", ylab = "Значимость")
-      
+    output$dynamicPlotAll <- renderPlot({
+      # Вывод всех слов на графике, кроме тех, которые пересекаются
+      ggplot(tdm_df_with_dynamism, aes(x = dynamism, y = freq_all, label = word)) +
+        geom_point() +
+        geom_text_repel() +
+        labs(x = "Динамика", y = "Значимость", title = "Тренд-карта для всех слов") +
+        theme_minimal()
+    })
+    output$dynamicPlotLimited <- renderPlot({
       amount_of_words_in_plot <- 30
-      # Вывод графика с amount_of_words_in_plot слов с отображением слов
-      # plot(tdm_df_with_dynamism$dynamism[1:amount_of_words_in_plot], tdm_df_with_dynamism$freq_all[1:amount_of_words_in_plot], xlab = "Динамика", ylab = "Значимость")
-      # text(tdm_df_with_dynamism$dynamism[1:amount_of_words_in_plot], tdm_df_with_dynamism$freq_all[1:amount_of_words_in_plot], tdm_df_with_dynamism$word[1:amount_of_words_in_plot], cex = 0.8)
-      
-      # Вывод графика для amount_of_words_in_plot слов без пересечений слов на графике
-      # ggplot(tdm_df_with_dynamism[1:amount_of_words_in_plot, ], aes(x = dynamism, y = freq_all, label = word)) +
-      #   geom_point() +
-      #   geom_text_repel(max.overlaps = Inf) +
-      #   labs(x = "Динамика", y = "Значимость") +
-      #   theme_minimal()
+      # Вывод графика для amount_of_words_in_plot слов без пересечений слов на графике. 
+      # При этом подписываетя лишь 50 слов, хотя точки на графике есть для всех слов.
+      ggplot(tdm_df_with_dynamism[1:amount_of_words_in_plot, ], aes(x = dynamism, y = freq_all, label = word)) +
+        geom_point() +
+        geom_text_repel(max.overlaps = 50) +
+        labs(x = "Динамика", y = "Значимость", title = paste0("Тренд-карта для ", amount_of_words_in_plot, " слов")) +
+        theme_classic()
     })
   })
 }
