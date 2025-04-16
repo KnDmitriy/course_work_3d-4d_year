@@ -437,19 +437,39 @@ server <- function(input, output, session) {
     })
     output$dynamicPlotAll <- renderPlot({
       # Вывод всех слов на графике, кроме тех, которые пересекаются
+      # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
       ggplot(tdm_df_with_dynamism, aes(x = dynamism, y = freq_all, label = word)) +
         geom_point() +
-        geom_text_repel() +
+        geom_text_repel(max.overlaps = 10, max.time = 0.2) +
+        
+        # # вертикальная линия
+        # geom_vline(xintercept = 0, linetype = "solid", color = "black") +
+        # 
+        # # стрелка на вертикальной оси (вверх от нуля)
+        # geom_segment(aes(x = 0, xend = 0, y = min(freq_all), yend = max(freq_all)),
+        #              arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
+        #              color = "gray50") +
+        
         labs(x = "Динамика", y = "Значимость", title = "Тренд-карта для всех слов") +
         theme_minimal()
     })
     output$dynamicPlotLimited <- renderPlot({
       amount_of_words_in_plot <- 30
       # Вывод графика для amount_of_words_in_plot слов без пересечений слов на графике. 
-      # При этом подписываетя лишь 50 слов, хотя точки на графике есть для всех слов.
+      # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
       ggplot(tdm_df_with_dynamism[1:amount_of_words_in_plot, ], aes(x = dynamism, y = freq_all, label = word)) +
         geom_point() +
-        geom_text_repel(max.overlaps = 50) +
+        geom_text_repel(max.overlaps = 10) +
+        # # вертикальная линия
+        # geom_vline(xintercept = 0, linetype = "solid", color = "black") +
+        # 
+        # # стрелка на вертикальной оси (вверх от нуля)
+        # geom_segment(aes(x = 0, xend = 0, y = min(freq_all), yend = max(freq_all)),
+        #              arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
+        #              color = "gray50") +
+        
+        
+        
         labs(x = "Динамика", y = "Значимость", title = paste0("Тренд-карта для ", amount_of_words_in_plot, " слов")) +
         theme_classic()
     })
