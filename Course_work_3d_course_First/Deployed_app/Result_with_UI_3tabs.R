@@ -4,7 +4,7 @@ install_or_load_pack <- function(packs){
     install.packages(create.pkg, dependencies = TRUE)
   sapply(packs, library, character.only = TRUE)
 }
-packages <- c("ggrepel", "ggplot2",  "data.table", "tm", "wordcloud2", "tidytext", "dplyr", 'tidyverse', 'readxl', 'udpipe', 'writexl', 'openxlsx', 'rlang')
+packages <- c("ggrepel", "ggplot2",  "data.table", "tm", "wordcloud2", "tidytext", "dplyr", 'tidyverse', 'readxl', 'udpipe', 'writexl', 'openxlsx', 'rlang', 'lsa')
 install_or_load_pack(packages)
 # Нужен ли пакет "Rcpp"? Все ли из подключаемых пакетов нужны? Как это проверить?
 # Проверить можно с помощью убирания пакета из загружаемых и попытки запуска программы,
