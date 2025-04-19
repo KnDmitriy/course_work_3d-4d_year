@@ -421,7 +421,7 @@ server <- function(input, output, session) {
       cos.mat <- cosine(as.matrix(tf_idf_only))
     }
     
-    # ifelse(max(tdm_df_with_dynamism$freq_all) != 0, max(tdm_df_with_dynamism$freq_all), 1)  значит,
+    # ifelse(max(tdm_df_with_dynamism$freq_all) != 0, max(tdm_df_with_dynamism$freq_all), 1)  значит следующее.
     # Если max(tdm_df_with_dynamism$freq_all) != 0, то вернуть max(tdm_df_with_dynamism$freq_all),
     # иначе вернуть 1.
     tdm_df_with_dynamism$freq_all_normalized <- (tdm_df_with_dynamism$freq_all) / ifelse(max(tdm_df_with_dynamism$freq_all) != 0, max(tdm_df_with_dynamism$freq_all), 1)  
@@ -441,15 +441,6 @@ server <- function(input, output, session) {
       ggplot(tdm_df_with_dynamism, aes(x = dynamism, y = freq_all, label = word)) +
         geom_point() +
         geom_text_repel(max.overlaps = 10, max.time = 0.2) +
-        
-        # # вертикальная линия
-        # geom_vline(xintercept = 0, linetype = "solid", color = "black") +
-        # 
-        # # стрелка на вертикальной оси (вверх от нуля)
-        # geom_segment(aes(x = 0, xend = 0, y = min(freq_all), yend = max(freq_all)),
-        #              arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
-        #              color = "gray50") +
-        
         labs(x = "Динамика", y = "Значимость", title = "Тренд-карта для всех слов") +
         theme_minimal()
     })
@@ -457,19 +448,13 @@ server <- function(input, output, session) {
       amount_of_words_in_plot <- 30
       # Вывод графика для amount_of_words_in_plot слов без пересечений слов на графике. 
       # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
-      ggplot(tdm_df_with_dynamism[1:amount_of_words_in_plot, ], aes(x = dynamism, y = freq_all, label = word)) +
+      min_abs_dynamism <- abs(min(tdm_df_with_dynamism$dynamism))
+      # Смещение оси координат так, чтобы все значения динамики были >= 0. 
+      # Для этого для всех выводимых слов к значениям динамики 
+      # прибавляют модуль минимального значения динамики
+      ggplot(tdm_df_with_dynamism[1:amount_of_words_in_plot, ], aes(x = dynamism + min_abs_dynamism, y = freq_all, label = word)) +
         geom_point() +
-        geom_text_repel(max.overlaps = 10) +
-        # # вертикальная линия
-        # geom_vline(xintercept = 0, linetype = "solid", color = "black") +
-        # 
-        # # стрелка на вертикальной оси (вверх от нуля)
-        # geom_segment(aes(x = 0, xend = 0, y = min(freq_all), yend = max(freq_all)),
-        #              arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
-        #              color = "gray50") +
-        
-        
-        
+        geom_text_repel(max.overlaps = 40) +
         labs(x = "Динамика", y = "Значимость", title = paste0("Тренд-карта для ", amount_of_words_in_plot, " слов")) +
         theme_classic()
     })
