@@ -448,11 +448,13 @@ server <- function(input, output, session) {
       amount_of_words_in_plot <- 30
       # Вывод графика для amount_of_words_in_plot слов без пересечений слов на графике. 
       # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
-      min_abs_dynamism <- abs(min(tdm_df_with_dynamism$dynamism))
+      
+      # Непонятно, какой результат при смещении оси координат нужен
+      # min_abs_dynamism <- abs(min(tdm_df_with_dynamism$dynamism))
       # Смещение оси координат так, чтобы все значения динамики были >= 0. 
       # Для этого для всех выводимых слов к значениям динамики 
       # прибавляют модуль минимального значения динамики
-      ggplot(tdm_df_with_dynamism[1:amount_of_words_in_plot, ], aes(x = dynamism + min_abs_dynamism, y = freq_all, label = word)) +
+      ggplot(tdm_df_with_dynamism[1:amount_of_words_in_plot, ], aes(x = dynamism, y = freq_all, label = word)) +
         geom_point() +
         geom_text_repel(max.overlaps = 40) +
         labs(x = "Динамика", y = "Значимость", title = paste0("Тренд-карта для ", amount_of_words_in_plot, " слов")) +
