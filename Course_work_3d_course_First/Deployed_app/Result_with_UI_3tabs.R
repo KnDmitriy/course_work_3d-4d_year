@@ -299,14 +299,19 @@ server <- function(input, output, session) {
     
     # RAKE 
     show(x)
-    show(stopwords_combined_list)
+    # show(stopwords_combined_list)
     # Удаление стоп-слов. Оставлять только существительные и прилагательные
-    show(keywords_rake(x, term = "lemma", group = c("sentence_id"), relevant = x$upos %in% c("NOUN", "ADJ") & !(x$lemma %in% stopwords_combined_list), n_min = 30))
+    # Оставлять только фразы, частота встречаемости которых >= 3
+    keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"), relevant = x$upos %in% c("NOUN", "ADJ") & !(x$lemma %in% stopwords_combined_list), n_min = 3)
+    show(keywords_rake_df)
+    keywords_rake_list <- keywords_rake_df$keyword
+    keywords_rake_list <- noquote(keywords_rake_list)
+    show(keywords_rake_list)
     
-    x$lemma <- noquote(x$lemma)
-    x$lemma <- str_replace_all(x$lemma, "[[:punct:]]", "")
-    tmp <- x$lemma
-    tmp <- str_replace_all(x$lemma, paste("\\b(", stopwords_combined_str, ")\\b"), "")
+    # x$lemma <- noquote(x$lemma)
+    # x$lemma <- str_replace_all(x$lemma, "[[:punct:]]", "")
+    tmp <- keywords_rake_list
+    tmp <- str_replace_all(keywords_rake_list, paste("\\b(", stopwords_combined_str, ")\\b"), "")
     tmp <- str_replace_all(tmp, '№', '')
     tmp <- str_replace_all(tmp, '−', '')
     tmp <- str_replace_all(tmp, '—', '')
@@ -325,13 +330,15 @@ server <- function(input, output, session) {
     tmp <- str_replace_all(tmp, 'полицияроссия', 'полиция')
     tmp <- str_replace_all(tmp, 'осуждеть', 'осуждать')
     tmp <- str_replace_all(tmp, 'умвд', 'мвд') 
-    tmp <- tmp[!grepl("http|vk", tmp)]  # Удаление терминов, содержащих http или vk
+    tmp <- tmp[!grepl("\\b\\w*(http|vk)\\w*\\b", tmp)]  # Удаление терминов, содержащих http или vk
     tmp <- tmp[sapply(tmp, nchar) > 0]
+    show(tmp)
     return(tmp)
   }
   analyze_and_render <- function(file_input, plot_output, table_output, wordcloud_output) {   # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
     preprocessed_texts_word_list <- get_preprocessed_texts_word_list(file_input)
     d <- as.data.frame(sort(table(preprocessed_texts_word_list), decreasing = TRUE))
+    show(d)
     colnames(d) <- c("word", "freq")
     word_freq <- d
     d$tf <- d$freq / nrow(d)
