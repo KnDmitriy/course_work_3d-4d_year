@@ -60,7 +60,7 @@ wordcloud2a <- function (data, size = 1, minSize = 0, gridSize = 0, fontFamily =
 
 
 
-load_stopwords <- function() {
+get_list_of_stopwords <- function() {
   
   female_names_rus <- read.csv("female_names_rus.txt", header=FALSE)
   male_names_rus <- read.csv("male_names_rus.txt", header=FALSE)
@@ -206,13 +206,15 @@ load_stopwords <- function() {
                         'буду', 'моё', 'своей', 'такое', 'всею', 'будут', 'своего', 'кого', 'свои', 'мог', 'нам', 'особенно', 'её',
                         'наше', 'кроме', 'вообще', 'вон', 'мною', 'никто', 'это', 'изза', 'именно', 'поэтому', 'будьт', 'являться', 'чувашский', 'тыса', 'смочь', 'ваший', 'гльба', 'ать', 'уть', 'ивать', 'ольги', 'пенз', 'ер', 'иметь', 'олегнуть', 'сг', 'например', 'сообщить', 'сообщать', 'среди', 'нть', 'пер', 'зспермь', 'края', 'ради', 'назвать', 'важный')
   extra_stop_words <- stop_words_expanded
-  stopwords_combined <- paste(c(stopwords("russian"), extra_stop_words,
-                                tolower(male_names_rus$V1),
-                                tolower(male_surnames_rus$V1),
-                                tolower(female_names_rus$V1)), collapse = "|")
+  stopwords_combined_list <- c(stopwords("russian"), extra_stop_words,
+                               tolower(male_names_rus$V1),
+                               tolower(male_surnames_rus$V1),
+                               tolower(female_names_rus$V1))
+  return(stopwords_combined_list)
 }
 
-stopwords_combined <- load_stopwords()
+stopwords_combined_list <- get_list_of_stopwords()
+stopwords_combined_str <- paste(stopwords_combined_list, collapse = "|")
 
 ui <- fluidPage(
   titlePanel("Анализ регионов по разным периодам"),
@@ -284,7 +286,7 @@ server <- function(input, output, session) {
   get_preprocessed_texts_word_list <- function(file) {   # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
     req(file)
     input_data <- as.data.frame(read_excel(file$datapath, col_names = FALSE)) 
-    load_stopwords()
+    # load_stopwords()
     corp_city_df <- clean_corpus(VCorpus(VectorSource(input_data)))
     corp_city_df[["1"]][["content"]] <- gsub("[\U{1F600}-\U{1F64F}\U{1F300}-\U{1F5FF}\U{1F680}-\U{1F6FF}\U{1F1E0}-\U{1F1FF}\U{2500}-\U{2BEF}\U{2702}-\U{27B0}\U{24C2}-\U{1F251}\U{1f926}-\U{1f937}\U{10000}-\U{10ffff}\u{2640}-\u{2642}\u{2600}-\u{2B55}\u{200d}\u{23cf}\u{23e9}\u{231a}\u{fe0f}\u{3030}\U{00B0}\U{20BD}]", "", corp_city_df[["1"]][["content"]], perl = TRUE)
     if (!file.exists('russian-gsd-ud-2.5-191206.udpipe'))
@@ -294,10 +296,17 @@ server <- function(input, output, session) {
     gsd_model <- udpipe_load_model(file = 'russian-gsd-ud-2.5-191206.udpipe')
     x <- udpipe_annotate(gsd_model, x = corp_city_df[["1"]][["content"]],  parser = "none")
     x <- as.data.frame(x)
+    
+    # RAKE 
+    show(x)
+    show(stopwords_combined_list)
+    # Удаление стоп-слов. Оставлять только существительные и прилагательные
+    show(keywords_rake(x, term = "lemma", group = c("sentence_id"), relevant = x$upos %in% c("NOUN", "ADJ") & !(x$lemma %in% stopwords_combined_list), n_min = 30))
+    
     x$lemma <- noquote(x$lemma)
     x$lemma <- str_replace_all(x$lemma, "[[:punct:]]", "")
     tmp <- x$lemma
-    tmp <- str_replace_all(x$lemma, paste("\\b(", stopwords_combined, ")\\b"), "")
+    tmp <- str_replace_all(x$lemma, paste("\\b(", stopwords_combined_str, ")\\b"), "")
     tmp <- str_replace_all(tmp, '№', '')
     tmp <- str_replace_all(tmp, '−', '')
     tmp <- str_replace_all(tmp, '—', '')
@@ -311,7 +320,7 @@ server <- function(input, output, session) {
     tmp <- str_replace_all(tmp, 'школьный', 'школа')
     # tmp <- str_replace_all(tmp, 'правительствомарийэть', 'правительство')
     tmp <- str_replace_all(tmp, 'молние', 'молния')
-    # tmp <- str_replace_all(x$lemma, paste("\\b(", stopwords_combined, ")\\b"), "") # без этого остается часто повторяющееся слово "правительство"
+    # tmp <- str_replace_all(x$lemma, paste("\\b(", stopwords_combined_str, ")\\b"), "") # без этого остается часто повторяющееся слово "правительство"
     
     tmp <- str_replace_all(tmp, 'полицияроссия', 'полиция')
     tmp <- str_replace_all(tmp, 'осуждеть', 'осуждать')
