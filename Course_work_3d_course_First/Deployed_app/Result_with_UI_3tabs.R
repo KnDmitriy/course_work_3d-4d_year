@@ -283,7 +283,9 @@ server <- function(input, output, session) {
       tm_map(removeNumbers) %>%
       tm_map(content_transformer(tolower)) 
   }
-  get_preprocessed_texts_word_list <- function(file) {   # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
+  
+  # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
+  get_preprocessed_texts_word_list <- function(file) {   
     req(file)
     input_data <- as.data.frame(read_excel(file$datapath, col_names = FALSE)) 
     # load_stopwords()
@@ -300,13 +302,23 @@ server <- function(input, output, session) {
     # RAKE 
     show(x)
     # show(stopwords_combined_list)
-    # Удаление стоп-слов. Оставлять только существительные и прилагательные
-    # Оставлять только фразы, частота встречаемости которых >= 3
-    keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"), relevant = x$upos %in% c("NOUN", "ADJ") & !(x$lemma %in% stopwords_combined_list), n_min = 3)
+
+    # Удаление стоп-слов. Оставлять только существительные и прилагательные.
+    # В качестве терминов берутся слова из таблицы x из столбца lemma,
+    # то есть начальные формы слов.
+    # Оставлять только фразы, частота встречаемости которых >= параметра n_min
+    # Метод keywords_rake возвращает таблицу со столбцами keyword, ngram, freq, rake;
+    # ключевые фразы в таблице отсортированы по убыванию столбца rake. 
+    keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"), 
+                                      relevant = x$upos %in% c("NOUN", "ADJ") & !(x$lemma %in% stopwords_combined_list), n_min = 3)
     show(keywords_rake_df)
     keywords_rake_list <- keywords_rake_df$keyword
     keywords_rake_list <- noquote(keywords_rake_list)
     show(keywords_rake_list)
+    
+    
+    
+    # Эта часть кода не выполняет полезной работы сейчас 
     
     # x$lemma <- noquote(x$lemma)
     # x$lemma <- str_replace_all(x$lemma, "[[:punct:]]", "")
@@ -333,7 +345,13 @@ server <- function(input, output, session) {
     tmp <- tmp[!grepl("\\b\\w*(http|vk)\\w*\\b", tmp)]  # Удаление терминов, содержащих http или vk
     tmp <- tmp[sapply(tmp, nchar) > 0]
     show(tmp)
-    return(tmp)
+    # return(tmp)
+    
+    
+    
+    
+    
+    return(keywords_rake_df)
   }
   analyze_and_render <- function(file_input, plot_output, table_output, wordcloud_output) {   # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
     preprocessed_texts_word_list <- get_preprocessed_texts_word_list(file_input)
