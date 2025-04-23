@@ -1,11 +1,11 @@
-install_or_load_pack <- function(packs){
+InstallOrLoadPack <- function(packs){
   create.pkg <- packs[!(packs %in% installed.packages()[, "Package"])]
   if (length(create.pkg))
     install.packages(create.pkg, dependencies = TRUE)
   sapply(packs, library, character.only = TRUE)
 }
 packages <- c("ggrepel", "ggplot2",  "data.table", "tm", "wordcloud2", "tidytext", "dplyr", 'tidyverse', 'readxl', 'udpipe', 'writexl', 'openxlsx', 'rlang', 'lsa')
-install_or_load_pack(packages)
+InstallOrLoadPack(packages)
 # Нужен ли пакет "Rcpp"? Все ли из подключаемых пакетов нужны? Как это проверить?
 # Проверить можно с помощью убирания пакета из загружаемых и попытки запуска программы,
 # загрузки файлов и их сравнения.
@@ -13,7 +13,7 @@ install_or_load_pack(packages)
 
 
 
-wordcloud2a <- function (data, size = 1, minSize = 0, gridSize = 0, fontFamily = "Segoe UI", 
+Wordcloud2a <- function (data, size = 1, minSize = 0, gridSize = 0, fontFamily = "Segoe UI", 
                          fontWeight = "bold", color = "random-dark", backgroundColor = "white", 
                          minRotation = -pi/4, maxRotation = pi/4, shuffle = TRUE, 
                          rotateRatio = 0.4, shape = "circle", ellipticity = 0.65, 
@@ -46,88 +46,149 @@ wordcloud2a <- function (data, size = 1, minSize = 0, gridSize = 0, fontFamily =
   }
   weightFactor = size * 180/max(dataOut$freq)
   settings <- list(word = dataOut$name, freq = dataOut$freq, 
-                   fontFamily = fontFamily, fontWeight = fontWeight, color = color, 
-                   minSize = minSize, weightFactor = weightFactor, backgroundColor = backgroundColor, 
-                   gridSize = gridSize, minRotation = minRotation, maxRotation = maxRotation, 
-                   shuffle = shuffle, rotateRatio = rotateRatio, shape = shape, 
-                   ellipticity = ellipticity, figBase64 = base64, hover = htmlwidgets::JS(hoverFunction))
+                   fontFamily = fontFamily, fontWeight = fontWeight, 
+                   color = color, minSize = minSize, weightFactor = weightFactor, 
+                   backgroundColor = backgroundColor, 
+                   gridSize = gridSize, minRotation = minRotation, 
+                   maxRotation = maxRotation, shuffle = shuffle, 
+                   rotateRatio = rotateRatio, shape = shape, 
+                   ellipticity = ellipticity, figBase64 = base64, 
+                   hover = htmlwidgets::JS(hoverFunction))
   chart = htmlwidgets::createWidget("wordcloud2", settings, 
-                                    width = widgetsize[1], height = widgetsize[2], sizingPolicy = htmlwidgets::sizingPolicy(viewer.padding = 0, 
-                                                                                                                            browser.padding = 0, browser.fill = TRUE))
-  chart
+                                    width = widgetsize[1], height = widgetsize[2], 
+                                    sizingPolicy = htmlwidgets::sizingPolicy(viewer.padding = 0, 
+                                    browser.padding = 0, browser.fill = TRUE))
+  return(chart)
 }
 
 
 
 
-get_list_of_stopwords <- function() {
+GetListOfStopwords <- function() {
   
   female_names_rus <- read.csv("female_names_rus.txt", header=FALSE)
   male_names_rus <- read.csv("male_names_rus.txt", header=FALSE)
   male_surnames_rus <- read.csv("male_surnames_rus.txt", header=FALSE)
-  stop_words_expanded <- c('и', 'й', 'г', 'единаяроссия', 'единый', 'время', 'территория', 'димитровграда', 'димитровград', 
-                           'чебоксар', 'ядринский', 'житель', 'компания', 'министр', 'дом', 'общественный',
-                           'программа', 'мероприятие', 'условие', 'ситуация', 'гражданин', 'группа', 'организация',
-                           'система', 'оао', 'ооо', 'пао', 'зао', 'центр', 'руководитель', 'конкурс', 'решить', 'говорить',
-                           'состав', 'уровень', 'адрес', 'дело', 'заместитель', 'просто', 'данный', 'сайт', 'позолять',
-                           'директор', 'полный', 'час', 'неделя', 'рука', 'ядрин', 'погода', 'выбрать',
-                           'средство', 'принять', 'чебоксарский', 'пункт', 'получать', 'второй', 'количество',
+  stop_words_expanded <- c('и', 'й', 'г', 'единаяроссия', 'единый', 'время', 
+                           'территория', 'димитровграда', 'димитровград', 
+                           'чебоксар', 'ядринский', 'житель', 'компания', 
+                           'министр', 'дом', 'общественный',
+                           'программа', 'мероприятие', 'условие', 'ситуация', 
+                           'гражданин', 'группа', 'организация',
+                           'система', 'оао', 'ооо', 'пао', 'зао', 'центр', 
+                           'руководитель', 'конкурс', 'решить', 'говорить',
+                           'состав', 'уровень', 'адрес', 'дело', 'заместитель', 
+                           'просто', 'данный', 'сайт', 'позолять',
+                           'директор', 'полный', 'час', 'неделя', 'рука', 'ядрин', 
+                           'погода', 'выбрать',
+                           'средство', 'принять', 'чебоксарский', 'пункт', 
+                           'получать', 'второй', 'количество',
                            
-                           'найти', 'pgrunews', 'хороший', 'занятие', 'ныжный', 'номер', 'отлично', 'лс',
-                           'состояние', 'цена', 'вид', 'руба', 'зеркадать', 'ть', 'торг', 'нужный', 'муниципальный',
-                           'округ', 'ип', 'ссылка', 'задний', 'друг', 'замить', 'бесплатный', 
-                           'участник', 'слово', 'прогноз', 'удобный', 'тд', 'летний', 'лето',
-                           'астраханский', 'астрахань', 'астраханскаяобласть', 'федеральный', 'государственный',
-                           'министерство', 'команда', 'асраханец', 'еррб', 'россии', 'ербашкортостан', 'мера',
-                           'гтркбашкортостан', 'необходимый', 'возможность', 'предварительный', 'отделение',
-                           'объект', 'погодавбашкирия', 'gtrkrb', 'проходить', 'правительство', 'премьерминистр',
-                           'правительстворб', 'период', 'пресечить', 'сотрудник', 'гтрквяток', 'еркир', 'мс',
+                           'найти', 'pgrunews', 'хороший', 'занятие', 'ныжный', 
+                           'номер', 'отлично', 'лс',
+                           'состояние', 'цена', 'вид', 'руба', 'зеркадать', 'ть', 
+                           'торг', 'нужный', 'муниципальный',
+                           'округ', 'ип', 'ссылка', 'задний', 'друг', 'замить', 
+                           'бесплатный', 
+                           'участник', 'слово', 'прогноз', 'удобный', 'тд', 
+                           'летний', 'лето',
+                           'астраханский', 'астрахань', 'астраханскаяобласть', 
+                           'федеральный', 'государственный',
+                           'министерство', 'команда', 'асраханец', 'еррб', 
+                           'россии', 'ербашкортостан', 'мера',
+                           'гтркбашкортостан', 'необходимый', 'возможность', 
+                           'предварительный', 'отделение',
+                           'объект', 'погодавбашкирия', 'gtrkrb', 'проходить', 
+                           'правительство', 'премьерминистр',
+                           'правительстворб', 'период', 'пресечить', 'сотрудник', 
+                           'гтрквяток', 'еркир', 'мс',
                            'мс', 'ночь', 'мй', 'обещать', 'ожидаться', 'c',
                            
-                           'правительствомарийэть', 'йошкарола', 'цур', 'цура', 'врио', 'федерация', 'исполнять',
-                           'врио', 'временно', 'заседание', 'эфир', 'цель', 'направить', 'внимание',
-                           'встреча', 'зайцин', 'сфера', 'национальный', 'улица', 'провдоить', 
-                           'нижегородскийрайон', 'нижнийновгород', 'пространство', 'урка',
-                           'нижегородец', 'администрация', 'департамент', 'горький', 'шалабай', 'номинация',
-                           'градус', 'ребенок', 'ребёнок', 'ый', 'находится', 'находиться', 'сильный',
-                           'перй', 'ул', 'прогнозируть', 'красноярский', 'самар', 'толльятъ', 'тольять',
-                           'толльять','тольятть', 'ярин', 'иметься', 'самарь', 'требоваться', 'зп', 'сутка','двое',
-                           'магазин', 'саратов', 'сарат', 'составить', 'течение', 'случай', 'общий', 'энгельсский',
-                           'саратовец', 'саратовый', 'балашовский', 'начало', 'областной', 'составлять',
-                           'учреждение', 'совет', 'комитет', 'казанский', 'средний', 'азнакаевский',
-                           'удмуртский', 'ижевска', 'мояудмуртия', 'ува', 'увинский', 'ижевсок', 'ижевск', 'астраханец',
+                           'правительствомарийэть', 'йошкарола', 'цур', 'цура', 
+                           'врио', 'федерация', 'исполнять',
+                           'врио', 'временно', 'заседание', 'эфир', 'цель', 
+                           'направить', 'внимание',
+                           'встреча', 'зайцин', 'сфера', 'национальный', 'улица', 
+                           'провдоить', 
+                           'нижегородскийрайон', 'нижнийновгород', 'пространство',
+                           'урка',
+                           'нижегородец', 'администрация', 'департамент', 
+                           'горький', 'шалабай', 'номинация',
+                           'градус', 'ребенок', 'ребёнок', 'ый', 'находится', 
+                           'находиться', 'сильный',
+                           'перй', 'ул', 'прогнозируть', 'красноярский', 
+                           'самар', 'толльятъ', 'тольять',
+                           'толльять','тольятть', 'ярин', 'иметься', 'самарь', 
+                           'требоваться', 'зп', 'сутка','двое',
+                           'магазин', 'саратов', 'сарат', 'составить', 'течение', 
+                           'случай', 'общий', 'энгельсский',
+                           'саратовец', 'саратовый', 'балашовский', 'начало', 
+                           'областной', 'составлять',
+                           'учреждение', 'совет', 'комитет', 'казанский', 
+                           'средний', 'азнакаевский',
+                           'удмуртский', 'ижевска', 'мояудмуртия', 'ува', 
+                           'увинский', 'ижевсок', 'ижевск', 'астраханец',
                            'кировчанин',
                            
-                           'образовательный', 'этап', 'астраханец', 'проведение', 'спортивный', 'дорожный',
-                           'градус', 'федеральный', 'цуринформировать', 'заявка', 'спортсмен', 'победитель', 'всероссийский',
-                           'результат', 'учебный', 'современный', 'цурмарийэл', 'зарегистрировать', 'совещание',
-                           'деятельность', 'акция', 'проведение', 'мероприятие', 'главный', 'несколько', 'любой',
-                           'площадка', 'комиссия', 'зона', 'помощь', 'специалист', 'окружающий', 'профессиональный',
-                           'сельский', 'ремний', 'предложение', 'планироваться', 'местный', 'онапомни', 'небольшой',
-                           'планироваться', 'председатель', 'совещание', 'обращение', 'республиканский', 'дополнительный',
-                           'индивидуальный', 'работник', 'режим', 'решение', 'управление', 'марийский', 'позволять',
-                           'деятельность', 'текущий', 'обсудить', 'поблагодарить', 'посетить', 'направление', 'тема',
-                           'орган', 'установить', 'участок', 'важноenn', 'пятница', 'свердлово', 'транспортный',
-                           'программа', 'ерпенза', 'коронавирусный', 'необходимый', 'возраст', 'возможность',
-                           'ситуация', 'средство', 'условие', 'уровень', 'количество', 'неделя', 'участник',
-                           'состояние', 'данный', 'позволять', 'адрес', 'охотничий', 'помогать', 'данный',
-                           'проводиться', 'здоровый', 'образ', 'активность', 'принять', 'httpspgrunews', 'профессия',
-                           'районный', 'действовать', 'заниматься', 'вместе', 'телефон', 'телефона', 'пробегнуть',
-                           'отличный', 'хотеть', 'ггра', 'сарансок', 'создание', 'смотреть', 'легкой',
-                           'оренбургское', 'профилактический', 'обстоятельство', 'поступить', 'произойти', 'сообщение',
-                           'следовать', 'пермь', 'застать', 'желать', 'линия', 'пусть', 'ближайший', 'рядом',
-                           'махонин', 'требование', 'внимательный', 'появиться', 'установить', 'режим', 'активный',
-                           'несколько', 'категория', 'позволять', 'смен', 'сменный', 'энгельс', 'срок', 'балаковский',
-                           'начать', 'план', 'прошлый', 'мр', 'услуга', 'лицо', 'специальный', 'заявка', 'httpskazanfirstrunews',
-                           "требовать", "править", "информация", 'обращение', 'править', 'население', 'подготовка', 'ремонт', 
-                           'план', 'комплекс', 'маршрут', 'снег', 'гражданин', 'общественный', 'продукт', 'товар', 'дом', 
-                           'мероприятие', 'система', 'сохранение', 'проблема', 'труд',  'деньги',  'мир', 'проверка', 
+                           'образовательный', 'этап', 'астраханец', 'проведение', 
+                           'спортивный', 'дорожный',
+                           'градус', 'федеральный', 'цуринформировать', 'заявка', 
+                           'спортсмен', 'победитель', 'всероссийский',
+                           'результат', 'учебный', 'современный', 'цурмарийэл', 
+                           'зарегистрировать', 'совещание',
+                           'деятельность', 'акция', 'проведение', 'мероприятие', 
+                           'главный', 'несколько', 'любой',
+                           'площадка', 'комиссия', 'зона', 'помощь', 'специалист',
+                           'окружающий', 'профессиональный',
+                           'сельский', 'ремний', 'предложение', 'планироваться',
+                           'местный', 'онапомни', 'небольшой',
+                           'планироваться', 'председатель', 'совещание', 
+                           'обращение', 'республиканский', 'дополнительный',
+                           'индивидуальный', 'работник', 'режим', 'решение', 
+                           'управление', 'марийский', 'позволять',
+                           'деятельность', 'текущий', 'обсудить', 'поблагодарить', 
+                           'посетить', 'направление', 'тема',
+                           'орган', 'установить', 'участок', 'важноenn', 'пятница',
+                           'свердлово', 'транспортный',
+                           'программа', 'ерпенза', 'коронавирусный', 'необходимый',
+                           'возраст', 'возможность',
+                           'ситуация', 'средство', 'условие', 'уровень', 
+                           'количество', 'неделя', 'участник',
+                           'состояние', 'данный', 'позволять', 'адрес', 
+                           'охотничий', 'помогать', 'данный',
+                           'проводиться', 'здоровый', 'образ', 'активность', 
+                           'принять', 'httpspgrunews', 'профессия',
+                           'районный', 'действовать', 'заниматься', 'вместе', 
+                           'телефон', 'телефона', 'пробегнуть',
+                           'отличный', 'хотеть', 'ггра', 'сарансок', 'создание', 
+                           'смотреть', 'легкой',
+                           'оренбургское', 'профилактический', 'обстоятельство', 
+                           'поступить', 'произойти', 'сообщение',
+                           'следовать', 'пермь', 'застать', 'желать', 'линия', 
+                           'пусть', 'ближайший', 'рядом',
+                           'махонин', 'требование', 'внимательный', 'появиться', 
+                           'установить', 'режим', 'активный',
+                           'несколько', 'категория', 'позволять', 'смен', 
+                           'сменный', 'энгельс', 'срок', 'балаковский',
+                           'начать', 'план', 'прошлый', 'мр', 'услуга', 'лицо', 
+                           'специальный', 'заявка', 'httpskazanfirstrunews',
+                           "требовать", "править", "информация", 'обращение', 
+                           'править', 'население', 'подготовка', 'ремонт', 
+                           'план', 'комплекс', 'маршрут', 'снег', 'гражданин', 
+                           'общественный', 'продукт', 'товар', 'дом', 
+                           'мероприятие', 'система', 'сохранение', 'проблема', 
+                           'труд',  'деньги',  'мир', 'проверка', 
                            'обратиться', 'возбудить', 'факт', 'движение', 
-                           'избегать', 'соблюдение', 'явление', 'здание', 'данные', 'правило', 'график', 'источник', 'продукция',
-                           'дорога', 'транспорт', 'татарский', 'азнакаево', 'следующий', 'татарстанный', 'парламент', 
-                           'httpsvkcomappformidformid', 'выходный', 'ахмадинур', "управлять", "объем", "происшествие",
-                           "использование", "обеспечение", "использование", "зауралье", "оперативный", "представитель",
-                           "голосоаваний", "секретарь", "рустема", "документ", "считать", "минувший", "столица", "международный",
+                           'избегать', 'соблюдение', 'явление', 'здание', 
+                           'данные', 'правило', 'график', 'источник', 'продукция',
+                           'дорога', 'транспорт', 'татарский', 'азнакаево', 
+                           'следующий', 'татарстанный', 'парламент', 
+                           'httpsvkcomappformidformid', 'выходный', 'ахмадинур',
+                           "управлять", "объем", "происшествие",
+                           "использование", "обеспечение", "использование", 
+                           "зауралье", "оперативный", "представитель",
+                           "голосоаваний", "секретарь", "рустема", "документ", 
+                           "считать", "минувший", "столица", "международный",
                            "дождь", "м", "кубок", "фонд", "поздравляе", "мужчина", "женщина", "проводить", "пробный",
                            "узнать", "материал", "статья", "отдел", "денежный", "полицейский", "сторона", "допустить", 
                            "вещество", "соблюдать", "вызов", "мобильный", "знакомый", "родной", "прохождение",
@@ -213,7 +274,7 @@ get_list_of_stopwords <- function() {
   return(stopwords_combined_list)
 }
 
-stopwords_combined_list <- get_list_of_stopwords()
+stopwords_combined_list <- GetListOfStopwords()
 stopwords_combined_str <- paste(stopwords_combined_list, collapse = "|")
 
 ui <- fluidPage(
@@ -275,7 +336,7 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   options(shiny.maxRequestSize=30*1024^2)
   files_preprocessed_data <- reactiveValues()
-  clean_corpus <- function(corpus_to_use){  # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
+  CleanCorpus <- function(corpus_to_use){  # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
     corpus_to_use %>%
       tm_map(removePunctuation) %>%
       tm_map(stripWhitespace) %>%
@@ -284,12 +345,33 @@ server <- function(input, output, session) {
       tm_map(content_transformer(tolower)) 
   }
   
-  # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
-  get_preprocessed_texts_word_list <- function(file) {   
+  GetRakeKeywords <- function(file) {
     req(file)
     input_data <- as.data.frame(read_excel(file$datapath, col_names = FALSE)) 
     # load_stopwords()
-    corp_city_df <- clean_corpus(VCorpus(VectorSource(input_data)))
+    corp_city_df <- CleanCorpus(VCorpus(VectorSource(input_data)))
+    corp_city_df[["1"]][["content"]] <- gsub("[\U{1F600}-\U{1F64F}\U{1F300}-\U{1F5FF}\U{1F680}-\U{1F6FF}\U{1F1E0}-\U{1F1FF}\U{2500}-\U{2BEF}\U{2702}-\U{27B0}\U{24C2}-\U{1F251}\U{1f926}-\U{1f937}\U{10000}-\U{10ffff}\u{2640}-\u{2642}\u{2600}-\u{2B55}\u{200d}\u{23cf}\u{23e9}\u{231a}\u{fe0f}\u{3030}\U{00B0}\U{20BD}]", "", corp_city_df[["1"]][["content"]], perl = TRUE)
+    if (!file.exists('russian-gsd-ud-2.5-191206.udpipe'))
+    {
+      gsd_model_raw <- udpipe_download_model(language = "russian-gsd")
+    }
+    gsd_model <- udpipe_load_model(file = 'russian-gsd-ud-2.5-191206.udpipe')
+    x <- udpipe_annotate(gsd_model, x = corp_city_df[["1"]][["content"]],  parser = "none")
+    x <- as.data.frame(x)
+    # до сюда строки повторяют код функции GetPreprocessedTextsWordList
+    
+    keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"), 
+                                      relevant = x$upos %in% c("NOUN", "ADJ") & !(x$lemma %in% stopwords_combined_list), n_min = 3)
+    return(keywords_rake_df)
+  }
+  
+  
+  # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
+  GetPreprocessedTextsWordList <- function(file) {   
+    req(file)
+    input_data <- as.data.frame(read_excel(file$datapath, col_names = FALSE)) 
+    # load_stopwords()
+    corp_city_df <- CleanCorpus(VCorpus(VectorSource(input_data)))
     corp_city_df[["1"]][["content"]] <- gsub("[\U{1F600}-\U{1F64F}\U{1F300}-\U{1F5FF}\U{1F680}-\U{1F6FF}\U{1F1E0}-\U{1F1FF}\U{2500}-\U{2BEF}\U{2702}-\U{27B0}\U{24C2}-\U{1F251}\U{1f926}-\U{1f937}\U{10000}-\U{10ffff}\u{2640}-\u{2642}\u{2600}-\u{2B55}\u{200d}\u{23cf}\u{23e9}\u{231a}\u{fe0f}\u{3030}\U{00B0}\U{20BD}]", "", corp_city_df[["1"]][["content"]], perl = TRUE)
     if (!file.exists('russian-gsd-ud-2.5-191206.udpipe'))
     {
@@ -300,7 +382,7 @@ server <- function(input, output, session) {
     x <- as.data.frame(x)
     
     # RAKE 
-    show(x)
+    # show(x)
     # show(stopwords_combined_list)
 
     # Удаление стоп-слов. Оставлять только существительные и прилагательные.
@@ -309,21 +391,21 @@ server <- function(input, output, session) {
     # Оставлять только фразы, частота встречаемости которых >= параметра n_min
     # Метод keywords_rake возвращает таблицу со столбцами keyword, ngram, freq, rake;
     # ключевые фразы в таблице отсортированы по убыванию столбца rake. 
-    keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"), 
-                                      relevant = x$upos %in% c("NOUN", "ADJ") & !(x$lemma %in% stopwords_combined_list), n_min = 3)
-    show(keywords_rake_df)
-    keywords_rake_list <- keywords_rake_df$keyword
-    keywords_rake_list <- noquote(keywords_rake_list)
-    show(keywords_rake_list)
+    # keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"), 
+    #                                   relevant = x$upos %in% c("NOUN", "ADJ") & !(x$lemma %in% stopwords_combined_list), n_min = 3)
+    # show(keywords_rake_df)
+    # keywords_rake_list <- keywords_rake_df$keyword
+    # keywords_rake_list <- noquote(keywords_rake_list)
+    # show(keywords_rake_list)
     
     
     
     # Эта часть кода не выполняет полезной работы сейчас 
     
-    # x$lemma <- noquote(x$lemma)
-    # x$lemma <- str_replace_all(x$lemma, "[[:punct:]]", "")
-    tmp <- keywords_rake_list
-    tmp <- str_replace_all(keywords_rake_list, paste("\\b(", stopwords_combined_str, ")\\b"), "")
+    x$lemma <- noquote(x$lemma)
+    x$lemma <- str_replace_all(x$lemma, "[[:punct:]]", "")
+    tmp <- x$lemma
+    tmp <- str_replace_all(x$lemma, paste("\\b(", stopwords_combined_str, ")\\b"), "")
     tmp <- str_replace_all(tmp, '№', '')
     tmp <- str_replace_all(tmp, '−', '')
     tmp <- str_replace_all(tmp, '—', '')
@@ -344,17 +426,23 @@ server <- function(input, output, session) {
     tmp <- str_replace_all(tmp, 'умвд', 'мвд') 
     tmp <- tmp[!grepl("\\b\\w*(http|vk)\\w*\\b", tmp)]  # Удаление терминов, содержащих http или vk
     tmp <- tmp[sapply(tmp, nchar) > 0]
-    show(tmp)
-    # return(tmp)
+    # show(tmp)
+    return(tmp)
     
     
     
     
     
+    # return(keywords_rake_df)
+  }
+  
+  AnalyzeAndRenderRake <-  function(file_input, plot_output, table_output, wordcloud_output) { 
+    keywords_rake_df <- GetRakeKeywords(file_input)
     return(keywords_rake_df)
   }
-  analyze_and_render <- function(file_input, plot_output, table_output, wordcloud_output) {   # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
-    preprocessed_texts_word_list <- get_preprocessed_texts_word_list(file_input)
+  
+  AnalyzeAndRender <- function(file_input, plot_output, table_output, wordcloud_output) {   # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
+    preprocessed_texts_word_list <- GetPreprocessedTextsWordList(file_input)
     d <- as.data.frame(sort(table(preprocessed_texts_word_list), decreasing = TRUE))
     show(d)
     colnames(d) <- c("word", "freq")
@@ -375,21 +463,12 @@ server <- function(input, output, session) {
     #     wordcloud(d$word, d$freq, colors=brewer.pal(8, "Dark2"))
     #   })
     output[[wordcloud_output]] <- renderWordcloud2({
-      wordcloud2a(word_freq, size = 0.45)
+      Wordcloud2a(word_freq, size = 0.45)
     })
     return(d)
   }
   
-  observeEvent(input$analyze1, {
-    files_preprocessed_data[["df_1"]] <- analyze_and_render(input[["file1"]], "barPlot1", "wordTable1", "wordcloud1")
-  })
-  observeEvent(input$analyze2, {
-    files_preprocessed_data[["df_2"]] <- analyze_and_render(input[["file2"]], "barPlot2", "wordTable2", "wordcloud2")
-  })
-  observeEvent(input$analyze3, {
-    files_preprocessed_data[["df_3"]] <- analyze_and_render(input[["file3"]], "barPlot3", "wordTable3", "wordcloud3")
-  })
-  observeEvent(input[["compareFilesBtn"]], {
+  ObserveEventCompareFilesBtn <- function(){
     d_all <- Filter(Negate(is.null), list(files_preprocessed_data[["df_1"]], files_preprocessed_data[["df_2"]], files_preprocessed_data[["df_3"]])) 
     cos.mat <- NULL
     if (length(d_all) == 1) {
@@ -407,7 +486,7 @@ server <- function(input, output, session) {
       tdm_df_with_dynamism <- tdm_df
       tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq1 + tdm_df_with_dynamism$freq2
       # ???
-      tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq2 - tdm_df_with_dynamism$freq1) / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)
+      # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq2 - tdm_df_with_dynamism$freq1) / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)
       
       # Средний абсолютный прирост
       tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq2 - tdm_df_with_dynamism$freq1) / 2
@@ -437,7 +516,7 @@ server <- function(input, output, session) {
       tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq1 + tdm_df_with_dynamism$freq2 + tdm_df_with_dynamism$freq3
       # ???
       # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1 + 1) / (tdm_df_with_dynamism$freq1 + 1)
-    
+      
       # Средний абсолютный прирост
       tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1) / 2
       # Средний коэффициент роста (Средний темп роста)
@@ -494,6 +573,20 @@ server <- function(input, output, session) {
         labs(x = "Динамика", y = "Значимость", title = paste0("Тренд-карта для ", amount_of_words_in_plot, " слов")) +
         theme_classic()
     })
+  }
+  
+  
+  observeEvent(input$analyze1, {
+    files_preprocessed_data[["df_1"]] <- AnalyzeAndRender(input[["file1"]], "barPlot1", "wordTable1", "wordcloud1")
+  })
+  observeEvent(input$analyze2, {
+    files_preprocessed_data[["df_2"]] <- AnalyzeAndRender(input[["file2"]], "barPlot2", "wordTable2", "wordcloud2")
+  })
+  observeEvent(input$analyze3, {
+    files_preprocessed_data[["df_3"]] <- AnalyzeAndRender(input[["file3"]], "barPlot3", "wordTable3", "wordcloud3")
+  })
+  observeEvent(input[["compareFilesBtn"]], {
+    ObserveEventCompareFilesBtn()
   })
 }
 
