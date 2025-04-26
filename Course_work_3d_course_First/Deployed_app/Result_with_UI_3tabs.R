@@ -336,7 +336,26 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   options(shiny.maxRequestSize=30*1024^2)
   files_preprocessed_data <- reactiveValues()
-  CleanCorpus <- function(corpus_to_use){  # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
+  
+  # Быть может, эта функция бесполезна.
+  # Удаление лишних пробелов бесполезно, так как их устраняют  при токенизации,
+  # Приведение текста к кодировке UTF-8 может быть полезно
+  # Удаление цифр полезно
+  # Приведение к нижнему регистру полезно, так как оно не происходит 
+  # при keywords_rake и udpipe_annotate
+  CleanCorpusRake <- function(corpus_to_use){  
+    corpus_to_use %>%
+      # tm_map(removePunctuation) %>%
+      tm_map(stripWhitespace) %>%
+      tm_map(content_transformer(function(x) iconv(x, to='UTF-8'))) %>%
+      tm_map(removeNumbers) %>%
+      tm_map(content_transformer(tolower)) 
+  }
+  
+  
+  
+  # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
+  CleanCorpus <- function(corpus_to_use){  
     corpus_to_use %>%
       tm_map(removePunctuation) %>%
       tm_map(stripWhitespace) %>%
@@ -349,8 +368,11 @@ server <- function(input, output, session) {
     req(file)
     input_data <- as.data.frame(read_excel(file$datapath, col_names = FALSE)) 
     # load_stopwords()
-    corp_city_df <- CleanCorpus(VCorpus(VectorSource(input_data)))
-    corp_city_df[["1"]][["content"]] <- gsub("[\U{1F600}-\U{1F64F}\U{1F300}-\U{1F5FF}\U{1F680}-\U{1F6FF}\U{1F1E0}-\U{1F1FF}\U{2500}-\U{2BEF}\U{2702}-\U{27B0}\U{24C2}-\U{1F251}\U{1f926}-\U{1f937}\U{10000}-\U{10ffff}\u{2640}-\u{2642}\u{2600}-\u{2B55}\u{200d}\u{23cf}\u{23e9}\u{231a}\u{fe0f}\u{3030}\U{00B0}\U{20BD}]", "", corp_city_df[["1"]][["content"]], perl = TRUE)
+    # Было:
+    # corp_city_df <- CleanCorpus(VCorpus(VectorSource(input_data)))
+    # Стало:
+    corp_city_df <- CleanCorpusRake(VCorpus(VectorSource(input_data)))
+    corp_city_df[["1"]][["content"]] <- gsub("[#«№\U{1F600}-\U{1F64F}\U{1F300}-\U{1F5FF}\U{1F680}-\U{1F6FF}\U{1F1E0}-\U{1F1FF}\U{2500}-\U{2BEF}\U{2702}-\U{27B0}\U{24C2}-\U{1F251}\U{1f926}-\U{1f937}\U{10000}-\U{10ffff}\u{2640}-\u{2642}\u{2600}-\u{2B55}\u{200d}\u{23cf}\u{23e9}\u{231a}\u{fe0f}\u{3030}\U{00B0}\U{20BD}]", "", corp_city_df[["1"]][["content"]], perl = TRUE)
     if (!file.exists('russian-gsd-ud-2.5-191206.udpipe'))
     {
       gsd_model_raw <- udpipe_download_model(language = "russian-gsd")
@@ -359,9 +381,43 @@ server <- function(input, output, session) {
     x <- udpipe_annotate(gsd_model, x = corp_city_df[["1"]][["content"]],  parser = "none")
     x <- as.data.frame(x)
     # до сюда строки повторяют код функции GetPreprocessedTextsWordList
+    # show(x)
+    # x$lemma <- str_replace_all(x$lemma, "[[:punct:]]", "")
+    tmp <- x$lemma
+   
+    # tmp <- str_replace_all(tmp, '№', '')
+    # tmp <- str_replace_all(tmp, '−', '')
+    # tmp <- str_replace_all(tmp, '—', '')
+    tmp <- str_replace_all(tmp, 'правительстворазвитие', 'развитие')
+    # tmp <- str_replace_all(tmp, 'правительстворб', 'правительство')
+    tmp <- str_replace_all(tmp, 'цифровый', 'цифровой')
+    tmp <- str_replace_all(tmp, 'научныймощность', 'научный мощность')
+    # tmp <- str_replace_all(tmp, 'club', '')
+    tmp <- str_replace_all(tmp, 'ветр', 'ветер')
+    tmp <- str_replace_all(tmp, 'школьник', 'школа')
+    tmp <- str_replace_all(tmp, 'школьный', 'школа')
+    # tmp <- str_replace_all(tmp, 'правительствомарийэть', 'правительство')
+    tmp <- str_replace_all(tmp, 'молние', 'молния')
     
+    tmp <- str_replace_all(tmp, 'полицияроссия', 'полиция')
+    tmp <- str_replace_all(tmp, 'осуждеть', 'осуждать')
+    tmp <- str_replace_all(tmp, 'умвд', 'мвд') 
+    # tmp <- tmp[!grepl("\\b\\w*(http|vk)\\w*\\b", tmp)]  # Удаление терминов, содержащих http или vk
+    # tmp <- tmp[sapply(tmp, nchar) > 0]
+    
+    x$lemma <- tmp
+    # show(x$lemma)
+    # Оставлять только существительные и прилагательные. 
+    # Стоп-слова "мои" используются.
+    # В качестве терминов берутся слова из таблицы x из столбца lemma,
+    # то есть начальные формы слов.
+    # Оставлять только фразы, частота встречаемости которых >= параметра n_min
+    # Метод keywords_rake возвращает таблицу со столбцами keyword, ngram, freq, rake;
+    # ключевые фразы в таблице отсортированы по убыванию столбца rake. 
     keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"), 
-                                      relevant = x$upos %in% c("NOUN", "ADJ") & !(x$lemma %in% stopwords_combined_list), n_min = 3)
+                                      relevant = x$upos %in% c("NOUN", "ADJ") & 
+                                        !(x$lemma %in% stopwords_combined_list), 
+                                      n_min = 30)
     return(keywords_rake_df)
   }
   
@@ -428,16 +484,11 @@ server <- function(input, output, session) {
     tmp <- tmp[sapply(tmp, nchar) > 0]
     # show(tmp)
     return(tmp)
-    
-    
-    
-    
-    
-    # return(keywords_rake_df)
   }
   
   AnalyzeAndRenderRake <-  function(file_input, plot_output, table_output, wordcloud_output) { 
     keywords_rake_df <- GetRakeKeywords(file_input)
+    show(keywords_rake_df)
     return(keywords_rake_df)
   }
   
@@ -576,17 +627,170 @@ server <- function(input, output, session) {
   }
   
   
+  ObserveEventCompareFilesBtnRake <- function() {
+    d_all <- Filter(Negate(is.null), list(files_preprocessed_data[["df_1"]], files_preprocessed_data[["df_2"]], files_preprocessed_data[["df_3"]])) 
+    cos.mat <- NULL
+    if (length(d_all) == 1) {
+    }
+    if (length(d_all) == 2) {
+      d_all <- full_join(d_all[[1]], d_all[[2]], by='keyword')
+      d_all <- d_all %>% replace(is.na (.), 0)
+      show(d_all)
+      rake_df <- select(d_all, 'keyword', 'rake.x', 'rake.y')
+      names(rake_df) <- c('keyword', 'rake1', 'rake2')
+      # show(rake_df)
+      # tdm_df <- select(d_all, 'word', 'freq.x', 'freq.y')
+      # names(tdm_df) <- c('word', 'freq1', 'freq2')
+      # tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2') != 0))
+      # tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
+      
+      rake_df_with_dynamism <- rake_df
+      rake_df_with_dynamism$rake_all <- rake_df_with_dynamism$rake1 + rake_df_with_dynamism$rake2
+      
+      # ???
+      # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq2 - tdm_df_with_dynamism$freq1) / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)
+      
+      # Средний абсолютный прирост
+      rake_df_with_dynamism$dynamism <- rake_df_with_dynamism$rake2 - rake_df_with_dynamism$rake1
+      # Средний коэффициент роста (Средний темп роста)
+      # tdm_df_with_dynamism$dynamism <- sqrt((tdm_df_with_dynamism$freq3 / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)))
+      
+      
+      # tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
+      # tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
+      # tf_idf <- tf_idf %>% mutate(tf_idf1 = tf1 * idf)
+      # tf_idf <- tf_idf %>% mutate(tf_idf2 = tf2 * idf)
+      # tf_idf_only <- select(tf_idf, 'tf_idf1', 'tf_idf2')
+      # names(tf_idf_only) <- c("Период 1", "Период 2")
+      # cos.mat <- cosine(as.matrix(tf_idf_only))  # Removes the first column for cosine calculation
+    }
+    if (length(d_all) == 3) {
+      d_all <- full_join(full_join(d_all[[1]], d_all[[2]], by='keyword'), d_all[[3]], by='keyword')
+      d_all <- d_all %>% replace(is.na (.), 0)
+      rake_df <- select(d_all, 'keyword', 'rake.x', 'rake.y', 'rake')
+      names(rake_df) <- c('keyword', 'rake1', 'rake2', 'rake3')
+      # tf_idf <- select(d_all, 'word', 'freq.x', 'tf.x', 'freq.y','tf.y', 'freq', 'tf')
+      # names(tf_idf) <- c('word', 'freq1', 'tf1', 'freq2', 'tf2', 'freq3', 'tf3')
+      # tdm_df <- select(d_all, 'word', 'freq.x', 'freq.y', 'freq')
+      # names(tdm_df) <- c('word', 'freq1', 'freq2', 'freq3')
+      # tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2', 'freq3') != 0))
+      # tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
+      
+      rake_df_with_dynamism <- rake_df
+      rake_df_with_dynamism$rake_all <- rake_df_with_dynamism$rake1 + rake_df_with_dynamism$rake2 + rake_df_with_dynamism$rake3
+      
+      
+      # tdm_df_with_dynamism <- tdm_df
+      # tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq1 + tdm_df_with_dynamism$freq2 + tdm_df_with_dynamism$freq3
+     # tdm_df_with_dynamism$rake.all <- d_all[[1]]$rake + d_all[[2]]$rake + d_all[[3]]$rake
+      
+      # ???
+      # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1 + 1) / (tdm_df_with_dynamism$freq1 + 1)
+      
+      # Средний абсолютный прирост
+      rake_df_with_dynamism$dynamism <- (rake_df_with_dynamism$rake3 - rake_df_with_dynamism$rake1) / 2
+     # tdm_df_with_dynamism$dynamism <- (d_all[[3]]$rake - d_all[[1]]$rake) / 2
+      # Средний коэффициент роста (Средний темп роста)
+      # tdm_df_with_dynamism$dynamism <- sqrt((tdm_df_with_dynamism$freq3 / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)))
+      
+      
+      
+      # tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
+      # tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
+      # tf_idf <- tf_idf %>% mutate(tf_idf1 = tf1 * idf)
+      # tf_idf <- tf_idf %>% mutate(tf_idf2 = tf2 * idf)
+      # tf_idf <- tf_idf %>% mutate(tf_idf3 = tf3 * idf)
+      # tf_idf_only <- select(tf_idf, 'tf_idf1', 'tf_idf2', 'tf_idf3')
+      # names(tf_idf_only) <- c("Период 1", "Период 2", "Период 3")
+      # cos.mat <- cosine(as.matrix(tf_idf_only))
+    }
+    
+    
+    
+    
+    
+    
+    #
+    # # ifelse(max(tdm_df_with_dynamism$freq_all) != 0, max(tdm_df_with_dynamism$freq_all), 1)  значит следующее.
+    # # Если max(tdm_df_with_dynamism$freq_all) != 0, то вернуть max(tdm_df_with_dynamism$freq_all),
+    # # иначе вернуть 1.
+    rake_df_with_dynamism$rake_all_normalized <- (rake_df_with_dynamism$rake_all) /
+      ifelse(max(rake_df_with_dynamism$rake_all) != 0,
+                 max(rake_df_with_dynamism$rake_all), 1)
+
+    value_for_norm_of_dynamic <- ifelse(min(rake_df_with_dynamism$dynamism) < 0, 
+                                        -min(rake_df_with_dynamism$dynamism), 0)
+    rake_df_with_dynamism$dynamism_normalized <- (rake_df_with_dynamism$dynamism +
+                                                    value_for_norm_of_dynamic) /
+      ifelse(max(rake_df_with_dynamism$dynamism + value_for_norm_of_dynamic) != 0,
+                 max(rake_df_with_dynamism$dynamism + value_for_norm_of_dynamic), 1)
+    rake_df_with_dynamism$sum_of_rake_all_norm_and_dyn_norm <- 
+      rake_df_with_dynamism$dynamism_normalized + rake_df_with_dynamism$rake_all_normalized
+    # # Сортировка датафрейма по столбцу freq_all_and_dynamism_normalized по убыванию
+    rake_df_with_dynamism <- rake_df_with_dynamism[order(rake_df_with_dynamism$sum_of_rake_all_norm_and_dyn_norm, decreasing = TRUE),]
+    show(rake_df_with_dynamism)
+    #
+    #
+    #
+    # output$compareFilesTable <- renderTable({
+    #   cos.mat
+    # })
+    output$dynamicPlotAll <- renderPlot({
+      # Вывод всех слов на графике, кроме тех, которые пересекаются
+      # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
+      plot_all <- ggplot(rake_df_with_dynamism, aes(x = dynamism, y = rake_all, label = keyword)) +
+        geom_point() +
+        geom_text_repel(max.overlaps = 10, max.time = 0.2) +
+        labs(x = "Динамика", y = "Значимость", title = "Тренд-карта для всех слов") +
+        # theme_minimal()
+        theme_classic()
+      # Сохранение графика в директорию с запускаемой программой
+      ggsave("Все слова.png", plot = plot_all, width = 8, height = 6, dpi = 300)
+      return(plot_all)
+    })
+    output$dynamicPlotLimited <- renderPlot({
+      amount_of_words_in_plot <- 30
+      # Вывод графика для amount_of_words_in_plot слов без пересечений слов на графике.
+      # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
+      
+      
+      
+      # Новая нормализация нормализованных данных для отображения точек на 
+      # отрезки [0, 1]
+      rake_df_with_dynamism_limited <- rake_df_with_dynamism[1:amount_of_words_in_plot, ]
+      rake_df_with_dynamism_limited$dynamism_normalized_again <- (rake_df_with_dynamism_limited$dynamism_normalized) /
+        ifelse(max(rake_df_with_dynamism_limited$dynamism_normalized) != 0,
+               max(rake_df_with_dynamism_limited$dynamism_normalized), 1)
+      rake_df_with_dynamism_limited$rake_all_normalized_again <- (rake_df_with_dynamism_limited$rake_all_normalized) /
+        ifelse(max(rake_df_with_dynamism_limited$rake_all_normalized) != 0,
+               max(rake_df_with_dynamism_limited$rake_all_normalized), 1)
+      
+      # Смещение оси координат так, чтобы все значения динамики были >= 0.
+      # Для этого для всех выводимых слов к значениям динамики
+      # прибавляют модуль минимального значения динамики
+      plot_limited <- ggplot(rake_df_with_dynamism_limited, aes(x = dynamism_normalized_again, y = rake_all_normalized_again, label = keyword)) +
+        geom_point() +
+        geom_text_repel(max.overlaps = 40) +
+        labs(x = "Динамика", y = "Значимость", title = paste0("Тренд-карта для ", amount_of_words_in_plot, " слов")) +
+        theme_classic()
+      # Сохранение графика в директорию с запускаемой программой
+      ggsave("30 слов.png", plot = plot_limited, width = 8, height = 6, dpi = 300)
+      return(plot_limited)
+    })
+  }
+  
+  
   observeEvent(input$analyze1, {
-    files_preprocessed_data[["df_1"]] <- AnalyzeAndRender(input[["file1"]], "barPlot1", "wordTable1", "wordcloud1")
+    files_preprocessed_data[["df_1"]] <- AnalyzeAndRenderRake(input[["file1"]], "barPlot1", "wordTable1", "wordcloud1")
   })
   observeEvent(input$analyze2, {
-    files_preprocessed_data[["df_2"]] <- AnalyzeAndRender(input[["file2"]], "barPlot2", "wordTable2", "wordcloud2")
+    files_preprocessed_data[["df_2"]] <- AnalyzeAndRenderRake(input[["file2"]], "barPlot2", "wordTable2", "wordcloud2")
   })
   observeEvent(input$analyze3, {
-    files_preprocessed_data[["df_3"]] <- AnalyzeAndRender(input[["file3"]], "barPlot3", "wordTable3", "wordcloud3")
+    files_preprocessed_data[["df_3"]] <- AnalyzeAndRenderRake(input[["file3"]], "barPlot3", "wordTable3", "wordcloud3")
   })
   observeEvent(input[["compareFilesBtn"]], {
-    ObserveEventCompareFilesBtn()
+    ObserveEventCompareFilesBtnRake()
   })
 }
 
