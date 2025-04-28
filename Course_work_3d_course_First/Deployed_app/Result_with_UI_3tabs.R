@@ -337,7 +337,6 @@ server <- function(input, output, session) {
   options(shiny.maxRequestSize=30*1024^2)
   files_preprocessed_data <- reactiveValues()
   
-  # Быть может, эта функция бесполезна.
   # Удаление лишних пробелов бесполезно, так как их устраняют  при токенизации,
   # Приведение текста к кодировке UTF-8 может быть полезно
   # Удаление цифр полезно
