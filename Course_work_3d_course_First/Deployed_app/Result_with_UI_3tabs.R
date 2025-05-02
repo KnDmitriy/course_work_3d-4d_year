@@ -228,8 +228,6 @@ GetListOfStopwords <- function() {
                            'ильшат', 'фазрахман', 'моусошгкаменкапензенскаяобласть',
                            'руб.', '-й', 'рубла', 'лир', 'рисок', 'уловек', 'месяц.',
                            'рубла.'
-                           
-                           
   )
   
   
@@ -283,7 +281,8 @@ GetListOfStopwords <- function() {
 
 stopwords_combined_list <- GetListOfStopwords()
 stopwords_combined_str <- paste(stopwords_combined_list, collapse = "|")
-basic_punctuation_marks_list <- c('.', ',', '')
+basic_punctuation_marks_list <- c('.', ',', ';', ':', '!', '?', '-', '"', '(',
+                                  ')', '«', '»')
 
 ui <- fluidPage(
   titlePanel("Анализ регионов по разным периодам"),
@@ -415,7 +414,7 @@ server <- function(input, output, session) {
     # tmp <- tmp[sapply(tmp, nchar) > 0]
     
     x$lemma <- tmp
-    # show(x)
+    show(x)
     # Оставлять только существительные и прилагательные. 
     # Стоп-слова "мои" используются.
     # В качестве терминов берутся слова из таблицы x из столбца lemma,
@@ -423,10 +422,15 @@ server <- function(input, output, session) {
     # Оставлять только фразы, частота встречаемости которых >= параметра n_min
     # Метод keywords_rake возвращает таблицу со столбцами keyword, ngram, freq, rake;
     # ключевые фразы в таблице отсортированы по убыванию столбца rake. 
-    keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"), 
-                                      relevant = x$upos %in% c("NOUN", "ADJ") & 
-                                        !(x$lemma %in% stopwords_combined_list), 
-                                      n_min = 30)
+    keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"),
+                                      relevant = x$upos %in% c("NOUN", "ADJ") &
+                                        !(x$lemma %in% stopwords_combined_list),
+                                      n_min = 3)
+    # keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"),
+    #                                   relevant = x$upos %in% c("NOUN", "ADJ") &
+    #                                     !(x$lemma %in% stopwords_combined_list) &
+    #                                     !(x$lemma %in% basic_punctuation_marks_list),
+    #                                   n_min = 30)
     return(keywords_rake_df)
   }
   
