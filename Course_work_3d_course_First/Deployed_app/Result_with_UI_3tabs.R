@@ -766,27 +766,32 @@ server <- function(input, output, session) {
       # Вывод графика для amount_of_words_in_plot слов без пересечений слов на графике.
       # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
       
-      
-      
-      # Новая нормализация нормализованных данных для отображения точек на 
-      # отрезки [0, 1]
-      rake_df_with_dynamism_limited <- rake_df_with_dynamism[1:amount_of_words_in_plot, ]
-      rake_df_with_dynamism_limited$dynamism_normalized_again <- (rake_df_with_dynamism_limited$dynamism_normalized) /
-        ifelse(max(rake_df_with_dynamism_limited$dynamism_normalized) != 0,
-               max(rake_df_with_dynamism_limited$dynamism_normalized), 1)
-      rake_df_with_dynamism_limited$rake_all_normalized_again <- (rake_df_with_dynamism_limited$rake_all_normalized) /
-        ifelse(max(rake_df_with_dynamism_limited$rake_all_normalized) != 0,
-               max(rake_df_with_dynamism_limited$rake_all_normalized), 1)
-      
+      # Нормализация данных для отображения точек на 
+      # отрезки [0, 1] для 30 слов
       # Смещение оси координат так, чтобы все значения динамики были >= 0.
       # Для этого для всех выводимых слов к значениям динамики
-      # прибавляют модуль минимального значения динамики
-      plot_limited <- ggplot(rake_df_with_dynamism_limited, aes(x = dynamism_normalized_again, y = rake_all_normalized_again, label = keyword)) +
+      # прибавляют модуль минимального значения динамики. 
+      # После этого производят деление на максимум для 30 слов
+      rake_df_with_dynamism_limited <- rake_df_with_dynamism[1:amount_of_words_in_plot, ]
+      value_for_norm_of_dynamic_for_30 <- ifelse(min(rake_df_with_dynamism_limited$dynamism) < 0, 
+                                          -min(rake_df_with_dynamism_limited$dynamism), 0)
+      rake_df_with_dynamism_limited$dynamism_normalized_for_30 <- (rake_df_with_dynamism_limited$dynamism +
+                                                                     value_for_norm_of_dynamic_for_30) /
+        ifelse(max(rake_df_with_dynamism_limited$dynamism + value_for_norm_of_dynamic_for_30) != 0,
+               max(rake_df_with_dynamism_limited$dynamism + value_for_norm_of_dynamic_for_30), 1)
+      rake_df_with_dynamism_limited$rake_all_normalized_for_30 <- (rake_df_with_dynamism_limited$rake_all) /
+        ifelse(max(rake_df_with_dynamism_limited$rake_all) != 0,
+               max(rake_df_with_dynamism_limited$rake_all), 1)
+      
+      
+      
+      plot_limited <- ggplot(rake_df_with_dynamism_limited, aes(x = dynamism_normalized_for_30, y = rake_all_normalized_for_30, label = keyword)) +
         geom_point() +
         geom_text_repel(max.overlaps = 40) +
         labs(x = "Динамика", y = "Значимость", title = paste0("Тренд-карта для ", amount_of_words_in_plot, " слов")) +
         theme_classic()
       # Сохранение графика в директорию с запускаемой программой
+      # Для width и height значение 1 значит 300 пискселей, 2 - 600, ...
       ggsave("30 слов.png", plot = plot_limited, width = 8, height = 6, dpi = 300)
       return(plot_limited)
     })
