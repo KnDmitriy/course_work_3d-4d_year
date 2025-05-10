@@ -286,63 +286,152 @@ basic_punctuation_marks_list <- c('.', ',', ';', ':', '!', '?', '-', '"', '(',
 
 ui <- fluidPage(
   titlePanel("Анализ регионов по разным периодам"),
-  tabsetPanel(id = "tabs",
-              tabPanel("Период 1",
-                       sidebarLayout(
-                         sidebarPanel(
-                           fileInput("file1", "Выберите Excel файл 1", accept = ".xlsx"),
-                           actionButton("analyze1", "Анализировать файл 1"),
-                           
-                         ),
-                         mainPanel(
-                           plotOutput("barPlot1"),
-                           wordcloud2Output("wordcloud1"),
-                           #plotOutput("wordcloud1"),
-                           tableOutput("wordTable1")
-                         )
-                       )
-              ),
-              tabPanel("Период 2",
-                       sidebarLayout(
-                         sidebarPanel(
-                           fileInput("file2", "Выберите Excel файл 2", accept = ".xlsx"),
-                           actionButton("analyze2", "Анализировать файл 2"),
-                           
-                         ),
-                         mainPanel(
-                           plotOutput("barPlot2"),
-                           wordcloud2Output("wordcloud2"),
-                           tableOutput("wordTable2")
-                         )
-                       )
-              ),
-              tabPanel("Период 3",
-                       sidebarLayout(
-                         sidebarPanel(
-                           fileInput("file3", "Выберите Excel файл 3", accept = ".xlsx"),
-                           actionButton("analyze3", "Анализировать файл 3"),
-                           
-                         ),
-                         mainPanel(
-                           plotOutput("barPlot3"),
-                           wordcloud2Output("wordcloud3"),
-                           tableOutput("wordTable3")
-                         )
-                       )
-              ),
-              tabPanel("Сравнить файлы",
-                       
-                       actionButton("compareFilesBtn", "Сравнить проанализированные файлы"),
-                       tableOutput("compareFilesTable"),
-                       plotOutput("dynamicPlotAll"),
-                       plotOutput("dynamicPlotLimited")
-              )
+  actionButton("addPeriodBtn", "Добавить период", icon = icon("plus")),
+  actionButton("removePeriodBtn", "Удалить период", icon = icon("minus")),
+  tabsetPanel(
+    id = "tabs",
+    tabPanel(
+      "Сравнить файлы", 
+      value = "compare",
+      actionButton("compareFilesBtn", "Сравнить проанализированные файлы"),
+      tableOutput("compareFilesTable"),
+      plotOutput("dynamicPlotAll"),
+      plotOutput("dynamicPlotLimited")
+    )
   )
+  # tabsetPanel(id = "tabs",
+  #             tabPanel("Период 1",
+  #                      sidebarLayout(
+  #                        sidebarPanel(
+  #                          fileInput("file1", "Выберите Excel файл 1", accept = ".xlsx"),
+  #                          actionButton("analyze1", "Анализировать файл 1"),
+  #                          
+  #                        ),
+  #                        mainPanel(
+  #                          plotOutput("barPlot1"),
+  #                          wordcloud2Output("wordcloud1"),
+  #                          #plotOutput("wordcloud1"),
+  #                          tableOutput("wordTable1")
+  #                        )
+  #                      )
+  #             ),
+  #             tabPanel("Период 2",
+  #                      sidebarLayout(
+  #                        sidebarPanel(
+  #                          fileInput("file2", "Выберите Excel файл 2", accept = ".xlsx"),
+  #                          actionButton("analyze2", "Анализировать файл 2"),
+  #                          
+  #                        ),
+  #                        mainPanel(
+  #                          plotOutput("barPlot2"),
+  #                          wordcloud2Output("wordcloud2"),
+  #                          tableOutput("wordTable2")
+  #                        )
+  #                      )
+  #             ),
+  #             tabPanel("Период 3",
+  #                      sidebarLayout(
+  #                        sidebarPanel(
+  #                          fileInput("file3", "Выберите Excel файл 3", accept = ".xlsx"),
+  #                          actionButton("analyze3", "Анализировать файл 3"),
+  #                          
+  #                        ),
+  #                        mainPanel(
+  #                          plotOutput("barPlot3"),
+  #                          wordcloud2Output("wordcloud3"),
+  #                          tableOutput("wordTable3")
+  #                        )
+  #                      )
+  #             ),
+  #             tabPanel("Сравнить файлы",
+  #                      
+  #                      actionButton("compareFilesBtn", "Сравнить проанализированные файлы"),
+  #                      tableOutput("compareFilesTable"),
+  #                      plotOutput("dynamicPlotAll"),
+  #                      plotOutput("dynamicPlotLimited")
+  #             )
+  # )
 )
 
 server <- function(input, output, session) {
   options(shiny.maxRequestSize=30*1024^2)
   files_preprocessed_data <- reactiveValues()
+  
+  # Реактивные значения для управления периодами
+  period_counter <- reactiveVal(0)
+  period_ids <- reactiveVal(character(0))
+  
+  # Модуль для вкладки периода
+  periodTabUI <- function(id) {
+    ns <- NS(id)
+    tabPanel(
+      title = paste("Период", gsub("period", "", id)),
+      value = id,
+      sidebarLayout(
+        sidebarPanel(
+          fileInput(ns("file"), "Выберите Excel файл", accept = ".xlsx"),
+          actionButton(ns("analyze"), "Анализировать файл")
+        ),
+        mainPanel(
+          plotOutput(ns("barPlot")),
+          wordcloud2Output(ns("wordcloud")),
+          tableOutput(ns("wordTable"))
+        )
+      )
+    )
+  }
+  
+  periodTabServer <- function(id) {
+    moduleServer(
+      id,
+      function(input, output, session) {
+        observeEvent(input$analyze, {
+          req(input$file)
+          # Здесь ваша логика обработки файла и создания графиков/таблиц
+          # Пример:
+          # data <- readxl::read_excel(input$file$datapath)
+          # output$barPlot <- renderPlot({ ... })
+          # output$wordcloud <- renderWordcloud2({ ... })
+          # output$wordTable <- renderTable({ ... })
+        })
+      }
+    )
+  }
+  
+  observeEvent(input$addPeriodBtn, {
+    new_id <- paste0("period", period_counter() + 1)
+    insertUI(
+      selector = "#tabs",
+      where = "beforeEnd",
+      ui = periodTabUI(new_id)
+    )
+    periodTabServer(new_id)
+    period_ids(c(period_ids(), new_id))
+    period_counter(period_counter() + 1)
+  })
+  
+  observeEvent(input$removePeriodBtn, {
+    if (period_counter() > 0) {
+      last_id <- period_ids()[length(period_ids())]
+      removeUI(selector = paste0("#", last_id))
+      period_ids(period_ids()[-length(period_ids())])
+      period_counter(period_counter() - 1)
+    }
+  })
+  
+  
+  # В server-функции после инициализации реактивных значений
+  lapply(1:3, function(i) {
+    new_id <- paste0("period", i)
+    insertUI(
+      selector = "#tabs",
+      where = "beforeEnd",
+      ui = periodTabUI(new_id)
+    )
+    periodTabServer(new_id)
+    period_ids(c(isolate(period_ids()), new_id))
+    period_counter(isolate(period_counter() + 1))
+  })
   
   # Удаление лишних пробелов бесполезно, так как их устраняют  при токенизации,
   # Приведение текста к кодировке UTF-8 может быть полезно
