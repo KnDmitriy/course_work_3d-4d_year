@@ -290,9 +290,16 @@ ui <- fluidPage(
               tabPanel("Период 1",
                        sidebarLayout(
                          sidebarPanel(
+                           radioButtons( 
+                             inputId = "radio1", 
+                             label = "Метод излечения ключевых слов:", 
+                             choices = list( 
+                               "Частотный" = 1, 
+                               "RAKE" = 2
+                             ) 
+                           ), 
                            fileInput("file1", "Выберите Excel файл 1", accept = ".xlsx"),
                            actionButton("analyze1", "Анализировать файл 1"),
-                           
                          ),
                          mainPanel(
                            plotOutput("barPlot1"),
@@ -305,6 +312,14 @@ ui <- fluidPage(
               tabPanel("Период 2",
                        sidebarLayout(
                          sidebarPanel(
+                           radioButtons( 
+                             inputId = "radio2", 
+                             label = "Метод излечения ключевых слов:", 
+                             choices = list( 
+                               "Частотный" = 1, 
+                               "RAKE" = 2
+                             ) 
+                           ), 
                            fileInput("file2", "Выберите Excel файл 2", accept = ".xlsx"),
                            actionButton("analyze2", "Анализировать файл 2"),
                            
@@ -319,6 +334,14 @@ ui <- fluidPage(
               tabPanel("Период 3",
                        sidebarLayout(
                          sidebarPanel(
+                           radioButtons( 
+                             inputId = "radio3", 
+                             label = "Метод излечения ключевых слов:", 
+                             choices = list( 
+                               "Частотный" = 1, 
+                               "RAKE" = 2
+                             ) 
+                           ), 
                            fileInput("file3", "Выберите Excel файл 3", accept = ".xlsx"),
                            actionButton("analyze3", "Анализировать файл 3"),
                            
@@ -331,7 +354,14 @@ ui <- fluidPage(
                        )
               ),
               tabPanel("Сравнить файлы",
-                       
+                       radioButtons( 
+                         inputId = "radioCompare", 
+                         label = "Метод излечения ключевых слов:", 
+                         choices = list( 
+                           "Частотный" = 1, 
+                           "RAKE" = 2
+                         ) 
+                       ), 
                        actionButton("compareFilesBtn", "Сравнить проанализированные файлы"),
                        tableOutput("compareFilesTable"),
                        plotOutput("dynamicPlotAll"),
