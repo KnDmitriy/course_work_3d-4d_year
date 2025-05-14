@@ -386,7 +386,6 @@ server <- function(input, output, session) {
       tm_map(content_transformer(function(x) iconv(x, to='UTF-8'))) %>%
       tm_map(removeNumbers) %>%
       tm_map(content_transformer(tolower)) 
-      # tm_map(str_remove_all("\b\\S*(http|vk)\\S*\b"))
   }
   
   
@@ -410,7 +409,7 @@ server <- function(input, output, session) {
     # Стало:
     corp_city_df <- CleanCorpusRake(VCorpus(VectorSource(input_data)))
     corp_city_df[["1"]][["content"]] <- gsub("[#«№\U{1F600}-\U{1F64F}\U{1F300}-\U{1F5FF}\U{1F680}-\U{1F6FF}\U{1F1E0}-\U{1F1FF}\U{2500}-\U{2BEF}\U{2702}-\U{27B0}\U{24C2}-\U{1F251}\U{1f926}-\U{1f937}\U{10000}-\U{10ffff}\u{2640}-\u{2642}\u{2600}-\u{2B55}\u{200d}\u{23cf}\u{23e9}\u{231a}\u{fe0f}\u{3030}\U{00B0}\U{20BD}]", "", corp_city_df[["1"]][["content"]], perl = TRUE)
-    
+    corp_city_df[["1"]][["content"]] <- gsub("\\b\\S*(http|vk)\\S*\\b", "", corp_city_df[["1"]][["content"]], perl = TRUE)
     # corp_city_df[["1"]][["content"]] <- str_remove_all(corp_city_df[["1"]][["content"]], "\b\\S*(http|vk)\\S*\b")
     
     if (!file.exists('russian-gsd-ud-2.5-191206.udpipe'))
