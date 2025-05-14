@@ -4,7 +4,7 @@ InstallOrLoadPack <- function(packs){
     install.packages(create.pkg, dependencies = TRUE)
   sapply(packs, library, character.only = TRUE)
 }
-packages <- c("ggrepel", "ggplot2",  "data.table", "tm", "wordcloud2", "tidytext", "dplyr", 'tidyverse', 'readxl', 'udpipe', 'writexl', 'openxlsx', 'rlang', 'lsa')
+packages <- c("ggrepel", "ggplot2",  "data.table", "tm", "wordcloud2", "tidytext", "dplyr", 'tidyverse', 'readxl', 'udpipe', 'writexl', 'openxlsx', 'rlang', 'lsa', 'shiny')
 InstallOrLoadPack(packages)
 # Нужен ли пакет "Rcpp"? Все ли из подключаемых пакетов нужны? Как это проверить?
 # Проверить можно с помощью убирания пакета из загружаемых и попытки запуска программы,
@@ -57,7 +57,7 @@ Wordcloud2a <- function (data, size = 1, minSize = 0, gridSize = 0, fontFamily =
   chart = htmlwidgets::createWidget("wordcloud2", settings, 
                                     width = widgetsize[1], height = widgetsize[2], 
                                     sizingPolicy = htmlwidgets::sizingPolicy(viewer.padding = 0, 
-                                    browser.padding = 0, browser.fill = TRUE))
+                                                                             browser.padding = 0, browser.fill = TRUE))
   return(chart)
 }
 
@@ -372,26 +372,27 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   options(shiny.maxRequestSize=30*1024^2)
-  files_preprocessed_data <- reactiveValues()
-  
+  files_preprocessed_data_frequency <- reactiveValues()
+  files_preprocessed_data_rake <- reactiveValues()
   # Удаление лишних пробелов бесполезно, так как их устраняют  при токенизации,
   # Приведение текста к кодировке UTF-8 может быть полезно
   # Удаление цифр полезно
   # Приведение к нижнему регистру полезно, так как оно не происходит 
   # при keywords_rake и udpipe_annotate
-  CleanCorpusRake <- function(corpus_to_use){  
+  CleanCorpusRake <- function(corpus_to_use){ 
     corpus_to_use %>%
       # tm_map(removePunctuation) %>%
       tm_map(stripWhitespace) %>%
       tm_map(content_transformer(function(x) iconv(x, to='UTF-8'))) %>%
       tm_map(removeNumbers) %>%
       tm_map(content_transformer(tolower)) 
+      # tm_map(str_remove_all("\b\\S*(http|vk)\\S*\b"))
   }
   
   
   
   # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
-  CleanCorpus <- function(corpus_to_use){  
+  CleanCorpusFrequency <- function(corpus_to_use){  
     corpus_to_use %>%
       tm_map(removePunctuation) %>%
       tm_map(stripWhitespace) %>%
@@ -405,10 +406,13 @@ server <- function(input, output, session) {
     input_data <- as.data.frame(read_excel(file$datapath, col_names = FALSE)) 
     # load_stopwords()
     # Было:
-    # corp_city_df <- CleanCorpus(VCorpus(VectorSource(input_data)))
+    # corp_city_df <- CleanCorpusFrequency(VCorpus(VectorSource(input_data)))
     # Стало:
     corp_city_df <- CleanCorpusRake(VCorpus(VectorSource(input_data)))
     corp_city_df[["1"]][["content"]] <- gsub("[#«№\U{1F600}-\U{1F64F}\U{1F300}-\U{1F5FF}\U{1F680}-\U{1F6FF}\U{1F1E0}-\U{1F1FF}\U{2500}-\U{2BEF}\U{2702}-\U{27B0}\U{24C2}-\U{1F251}\U{1f926}-\U{1f937}\U{10000}-\U{10ffff}\u{2640}-\u{2642}\u{2600}-\u{2B55}\u{200d}\u{23cf}\u{23e9}\u{231a}\u{fe0f}\u{3030}\U{00B0}\U{20BD}]", "", corp_city_df[["1"]][["content"]], perl = TRUE)
+    
+    # corp_city_df[["1"]][["content"]] <- str_remove_all(corp_city_df[["1"]][["content"]], "\b\\S*(http|vk)\\S*\b")
+    
     if (!file.exists('russian-gsd-ud-2.5-191206.udpipe'))
     {
       gsd_model_raw <- udpipe_download_model(language = "russian-gsd")
@@ -420,7 +424,7 @@ server <- function(input, output, session) {
     # show(x)
     # x$lemma <- str_replace_all(x$lemma, "[[:punct:]]", "")
     tmp <- x$lemma
-   
+    
     # tmp <- str_replace_all(tmp, '№', '')
     # tmp <- str_replace_all(tmp, '−', '')
     # tmp <- str_replace_all(tmp, '—', '')
@@ -440,7 +444,7 @@ server <- function(input, output, session) {
     tmp <- str_replace_all(tmp, 'умвд', 'мвд') 
     
     tmp <- str_replace_all(tmp, 'перевозкий', 'перевозка') 
-    # tmp <- tmp[!grepl("\\b\\w*(http|vk)\\w*\\b", tmp)]  # Удаление терминов, содержащих http или vk
+    # tmp <- tmp[!grepl("\\b\\w*(http|vk)\\S*\\b", tmp)]  # Удаление терминов, содержащих http или vk
     # tmp <- tmp[sapply(tmp, nchar) > 0]
     
     x$lemma <- tmp
@@ -455,7 +459,7 @@ server <- function(input, output, session) {
     keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"),
                                       relevant = x$upos %in% c("NOUN", "ADJ") &
                                         !(x$lemma %in% stopwords_combined_list),
-                                      n_min = 3)
+                                      n_min = 0)
     # keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"),
     #                                   relevant = x$upos %in% c("NOUN", "ADJ") &
     #                                     !(x$lemma %in% stopwords_combined_list) &
@@ -470,7 +474,7 @@ server <- function(input, output, session) {
     req(file)
     input_data <- as.data.frame(read_excel(file$datapath, col_names = FALSE)) 
     # load_stopwords()
-    corp_city_df <- CleanCorpus(VCorpus(VectorSource(input_data)))
+    corp_city_df <- CleanCorpusFrequency(VCorpus(VectorSource(input_data)))
     corp_city_df[["1"]][["content"]] <- gsub("[\U{1F600}-\U{1F64F}\U{1F300}-\U{1F5FF}\U{1F680}-\U{1F6FF}\U{1F1E0}-\U{1F1FF}\U{2500}-\U{2BEF}\U{2702}-\U{27B0}\U{24C2}-\U{1F251}\U{1f926}-\U{1f937}\U{10000}-\U{10ffff}\u{2640}-\u{2642}\u{2600}-\u{2B55}\u{200d}\u{23cf}\u{23e9}\u{231a}\u{fe0f}\u{3030}\U{00B0}\U{20BD}]", "", corp_city_df[["1"]][["content"]], perl = TRUE)
     if (!file.exists('russian-gsd-ud-2.5-191206.udpipe'))
     {
@@ -483,7 +487,7 @@ server <- function(input, output, session) {
     # RAKE 
     # show(x)
     # show(stopwords_combined_list)
-
+    
     # Удаление стоп-слов. Оставлять только существительные и прилагательные.
     # В качестве терминов берутся слова из таблицы x из столбца lemma,
     # то есть начальные формы слов.
@@ -523,7 +527,7 @@ server <- function(input, output, session) {
     tmp <- str_replace_all(tmp, 'полицияроссия', 'полиция')
     tmp <- str_replace_all(tmp, 'осуждеть', 'осуждать')
     tmp <- str_replace_all(tmp, 'умвд', 'мвд') 
-    tmp <- tmp[!grepl("\\b\\w*(http|vk)\\w*\\b", tmp)]  # Удаление терминов, содержащих http или vk
+    # tmp <- tmp[!grepl("\\b\\w*(http|vk)\\S*\\b", tmp)]  # Удаление терминов, содержащих http или vk
     tmp <- tmp[sapply(tmp, nchar) > 0]
     # show(tmp)
     return(tmp)
@@ -531,11 +535,28 @@ server <- function(input, output, session) {
   
   AnalyzeAndRenderRake <-  function(file_input, plot_output, table_output, wordcloud_output) { 
     keywords_rake_df <- GetRakeKeywords(file_input)
-    show(keywords_rake_df)
+    # show(keywords_rake_df)
+    keywords_rake_df_for_output <- keywords_rake_df[c("keyword", "freq", "rake")]
+    show(keywords_rake_df_for_output)
+    output[[plot_output]] <- renderPlot({
+      ggplot(keywords_rake_df_for_output[1:10, ], aes(x = reorder(keyword, rake), y = rake)) +
+        geom_bar(stat = "identity") +
+        coord_flip() +
+        labs(title = "Слова с наибольшим индексом RAKE", x = "Слова", y = "Индекс RAKE") +
+        theme_gray(base_size = 18)
+    })
+    output[[table_output]] <- renderTable({
+      colnames(keywords_rake_df_for_output) <- c("Ключевые слова", "Частота встречаемости", "RAKE")
+      head(keywords_rake_df_for_output, 10)
+    })
+    output[[wordcloud_output]] <- renderWordcloud2({
+      Wordcloud2a(keywords_rake_df_for_output[c("keyword", "freq")], size = 0.45)
+    })
     return(keywords_rake_df)
   }
   
-  AnalyzeAndRender <- function(file_input, plot_output, table_output, wordcloud_output) {   # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
+  # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
+  AnalyzeAndRenderFrequency <- function(file_input, plot_output, table_output, wordcloud_output) {   
     preprocessed_texts_word_list <- GetPreprocessedTextsWordList(file_input)
     d <- as.data.frame(sort(table(preprocessed_texts_word_list), decreasing = TRUE))
     show(d)
@@ -562,8 +583,10 @@ server <- function(input, output, session) {
     return(d)
   }
   
-  ObserveEventCompareFilesBtn <- function(){
-    d_all <- Filter(Negate(is.null), list(files_preprocessed_data[["df_1"]], files_preprocessed_data[["df_2"]], files_preprocessed_data[["df_3"]])) 
+  ObserveEventCompareFilesBtnFrequency <- function(){
+    d_all <- Filter(Negate(is.null), list(files_preprocessed_data_frequency[["df_1"]], 
+                                          files_preprocessed_data_frequency[["df_2"]], 
+                                          files_preprocessed_data_frequency[["df_3"]])) 
     cos.mat <- NULL
     if (length(d_all) == 1) {
     }
@@ -671,7 +694,9 @@ server <- function(input, output, session) {
   
   
   ObserveEventCompareFilesBtnRake <- function() {
-    d_all <- Filter(Negate(is.null), list(files_preprocessed_data[["df_1"]], files_preprocessed_data[["df_2"]], files_preprocessed_data[["df_3"]])) 
+    d_all <- Filter(Negate(is.null), list(files_preprocessed_data_rake[["df_1"]], 
+                                          files_preprocessed_data_rake[["df_2"]], 
+                                          files_preprocessed_data_rake[["df_3"]])) 
     cos.mat <- NULL
     if (length(d_all) == 1) {
     }
@@ -725,14 +750,14 @@ server <- function(input, output, session) {
       
       # tdm_df_with_dynamism <- tdm_df
       # tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq1 + tdm_df_with_dynamism$freq2 + tdm_df_with_dynamism$freq3
-     # tdm_df_with_dynamism$rake.all <- d_all[[1]]$rake + d_all[[2]]$rake + d_all[[3]]$rake
+      # tdm_df_with_dynamism$rake.all <- d_all[[1]]$rake + d_all[[2]]$rake + d_all[[3]]$rake
       
       # ???
       # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1 + 1) / (tdm_df_with_dynamism$freq1 + 1)
       
       # Средний абсолютный прирост
       rake_df_with_dynamism$dynamism <- (rake_df_with_dynamism$rake3 - rake_df_with_dynamism$rake1) / 2
-     # tdm_df_with_dynamism$dynamism <- (d_all[[3]]$rake - d_all[[1]]$rake) / 2
+      # tdm_df_with_dynamism$dynamism <- (d_all[[3]]$rake - d_all[[1]]$rake) / 2
       # Средний коэффициент роста (Средний темп роста)
       # tdm_df_with_dynamism$dynamism <- sqrt((tdm_df_with_dynamism$freq3 / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)))
       
@@ -759,14 +784,14 @@ server <- function(input, output, session) {
     # # иначе вернуть 1.
     rake_df_with_dynamism$rake_all_normalized <- (rake_df_with_dynamism$rake_all) /
       ifelse(max(rake_df_with_dynamism$rake_all) != 0,
-                 max(rake_df_with_dynamism$rake_all), 1)
-
+             max(rake_df_with_dynamism$rake_all), 1)
+    
     value_for_norm_of_dynamic <- ifelse(min(rake_df_with_dynamism$dynamism) < 0, 
                                         -min(rake_df_with_dynamism$dynamism), 0)
     rake_df_with_dynamism$dynamism_normalized <- (rake_df_with_dynamism$dynamism +
                                                     value_for_norm_of_dynamic) /
       ifelse(max(rake_df_with_dynamism$dynamism + value_for_norm_of_dynamic) != 0,
-                 max(rake_df_with_dynamism$dynamism + value_for_norm_of_dynamic), 1)
+             max(rake_df_with_dynamism$dynamism + value_for_norm_of_dynamic), 1)
     rake_df_with_dynamism$sum_of_rake_all_norm_and_dyn_norm <- 
       rake_df_with_dynamism$dynamism_normalized + rake_df_with_dynamism$rake_all_normalized
     # # Сортировка датафрейма по столбцу freq_all_and_dynamism_normalized по убыванию
@@ -804,7 +829,7 @@ server <- function(input, output, session) {
       # После этого производят деление на максимум для 30 слов
       rake_df_with_dynamism_limited <- rake_df_with_dynamism[1:amount_of_words_in_plot, ]
       value_for_norm_of_dynamic_for_30 <- ifelse(min(rake_df_with_dynamism_limited$dynamism) < 0, 
-                                          -min(rake_df_with_dynamism_limited$dynamism), 0)
+                                                 -min(rake_df_with_dynamism_limited$dynamism), 0)
       rake_df_with_dynamism_limited$dynamism_normalized_for_30 <- (rake_df_with_dynamism_limited$dynamism +
                                                                      value_for_norm_of_dynamic_for_30) /
         ifelse(max(rake_df_with_dynamism_limited$dynamism + value_for_norm_of_dynamic_for_30) != 0,
@@ -829,16 +854,44 @@ server <- function(input, output, session) {
   
   
   observeEvent(input$analyze1, {
-    files_preprocessed_data[["df_1"]] <- AnalyzeAndRenderRake(input[["file1"]], "barPlot1", "wordTable1", "wordcloud1")
+    if (input$radio1 == 1) 
+    {
+      files_preprocessed_data_frequency[["df_1"]] <- AnalyzeAndRenderFrequency(input[["file1"]], "barPlot1", "wordTable1", "wordcloud1")
+    }
+    else if (input$radio1 == 2)
+    {
+      files_preprocessed_data_rake[["df_1"]] <- AnalyzeAndRenderRake(input[["file1"]], "barPlot1", "wordTable1", "wordcloud1")
+    }
   })
   observeEvent(input$analyze2, {
-    files_preprocessed_data[["df_2"]] <- AnalyzeAndRenderRake(input[["file2"]], "barPlot2", "wordTable2", "wordcloud2")
+    if (input$radio2 == 1) 
+    {
+      files_preprocessed_data_frequency[["df_2"]] <- AnalyzeAndRenderFrequency(input[["file2"]], "barPlot2", "wordTable2", "wordcloud2")
+    }
+    else if (input$radio2 == 2)
+    {
+      files_preprocessed_data_rake[["df_2"]] <- AnalyzeAndRenderRake(input[["file2"]], "barPlot2", "wordTable2", "wordcloud2")
+    }
   })
   observeEvent(input$analyze3, {
-    files_preprocessed_data[["df_3"]] <- AnalyzeAndRenderRake(input[["file3"]], "barPlot3", "wordTable3", "wordcloud3")
+    if (input$radio3 == 1) 
+    {
+      files_preprocessed_data_frequency[["df_3"]] <- AnalyzeAndRenderFrequency(input[["file3"]], "barPlot3", "wordTable3", "wordcloud3")
+    }
+    if (input$radio3 == 2)
+    {
+      files_preprocessed_data_rake[["df_3"]] <- AnalyzeAndRenderRake(input[["file3"]], "barPlot3", "wordTable3", "wordcloud3")
+    }
   })
   observeEvent(input[["compareFilesBtn"]], {
-    ObserveEventCompareFilesBtnRake()
+    if (input$radioCompare == 1) 
+    {
+      ObserveEventCompareFilesBtnFrequency()
+    }
+    if (input$radioCompare == 2)
+    {
+      ObserveEventCompareFilesBtnRake()
+    }
   })
 }
 
