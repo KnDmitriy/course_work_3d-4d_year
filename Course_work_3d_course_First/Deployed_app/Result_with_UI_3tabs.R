@@ -585,9 +585,10 @@ server <- function(input, output, session) {
                                           files_preprocessed_data_frequency[["df_2"]], 
                                           files_preprocessed_data_frequency[["df_3"]])) 
     cos.mat <- NULL
-    if (length(d_all) == 1) {
+    if (length(d_all) <= 1) {
+      showNotification("Для анализа должно быть обработано не менее двух файлов с помощью одного метода.")
     }
-    if (length(d_all) == 2) {
+    else if (length(d_all) == 2) {
       d_all <- full_join(d_all[[1]], d_all[[2]], by='word')
       d_all <- d_all %>% replace(is.na (.), 0)
       tf_idf <- select(d_all, 'word', 'freq.x', 'tf.x', 'freq.y','tf.y')
@@ -616,7 +617,7 @@ server <- function(input, output, session) {
       names(tf_idf_only) <- c("Период 1", "Период 2")
       cos.mat <- cosine(as.matrix(tf_idf_only))  # Removes the first column for cosine calculation
     }
-    if (length(d_all) == 3) {
+    else if (length(d_all) == 3) {
       d_all <- full_join(full_join(d_all[[1]], d_all[[2]], by='word'), d_all[[3]], by='word')
       d_all <- d_all %>% replace(is.na (.), 0)
       tf_idf <- select(d_all, 'word', 'freq.x', 'tf.x', 'freq.y','tf.y', 'freq', 'tf')
@@ -647,46 +648,48 @@ server <- function(input, output, session) {
       names(tf_idf_only) <- c("Период 1", "Период 2", "Период 3")
       cos.mat <- cosine(as.matrix(tf_idf_only))
     }
-    
-    # ifelse(max(tdm_df_with_dynamism$freq_all) != 0, max(tdm_df_with_dynamism$freq_all), 1)  значит следующее.
-    # Если max(tdm_df_with_dynamism$freq_all) != 0, то вернуть max(tdm_df_with_dynamism$freq_all),
-    # иначе вернуть 1.
-    tdm_df_with_dynamism$freq_all_normalized <- (tdm_df_with_dynamism$freq_all) / ifelse(max(tdm_df_with_dynamism$freq_all) != 0, max(tdm_df_with_dynamism$freq_all), 1)  
-    tdm_df_with_dynamism$dynamism_normalized <- (tdm_df_with_dynamism$dynamism) / ifelse(max(tdm_df_with_dynamism$dynamism) != 0, max(tdm_df_with_dynamism$dynamism), 1)  
-    tdm_df_with_dynamism$freq_all_and_dynamism_normalized <- tdm_df_with_dynamism$dynamism_normalized + tdm_df_with_dynamism$freq_all_normalized
-    # Сортировка датафрейма по столбцу freq_all_and_dynamism_normalized по убыванию
-    tdm_df_with_dynamism <- tdm_df_with_dynamism[order(tdm_df_with_dynamism$freq_all_and_dynamism_normalized, decreasing = TRUE),] 
-    
-    
-    
-    output$compareFilesTable <- renderTable({
-      cos.mat
-    })
-    output$dynamicPlotAll <- renderPlot({
-      # Вывод всех слов на графике, кроме тех, которые пересекаются
-      # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
-      ggplot(tdm_df_with_dynamism, aes(x = dynamism, y = freq_all, label = word)) +
-        geom_point() +
-        geom_text_repel(max.overlaps = 10, max.time = 0.2) +
-        labs(x = "Динамика", y = "Значимость", title = "Тренд-карта для всех слов") +
-        theme_minimal()
-    })
-    output$dynamicPlotLimited <- renderPlot({
-      amount_of_words_in_plot <- 30
-      # Вывод графика для amount_of_words_in_plot слов без пересечений слов на графике. 
-      # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
+    if (length(d_all) > 1)
+    {
+      # ifelse(max(tdm_df_with_dynamism$freq_all) != 0, max(tdm_df_with_dynamism$freq_all), 1)  значит следующее.
+      # Если max(tdm_df_with_dynamism$freq_all) != 0, то вернуть max(tdm_df_with_dynamism$freq_all),
+      # иначе вернуть 1.
+      tdm_df_with_dynamism$freq_all_normalized <- (tdm_df_with_dynamism$freq_all) / ifelse(max(tdm_df_with_dynamism$freq_all) != 0, max(tdm_df_with_dynamism$freq_all), 1)  
+      tdm_df_with_dynamism$dynamism_normalized <- (tdm_df_with_dynamism$dynamism) / ifelse(max(tdm_df_with_dynamism$dynamism) != 0, max(tdm_df_with_dynamism$dynamism), 1)  
+      tdm_df_with_dynamism$freq_all_and_dynamism_normalized <- tdm_df_with_dynamism$dynamism_normalized + tdm_df_with_dynamism$freq_all_normalized
+      # Сортировка датафрейма по столбцу freq_all_and_dynamism_normalized по убыванию
+      tdm_df_with_dynamism <- tdm_df_with_dynamism[order(tdm_df_with_dynamism$freq_all_and_dynamism_normalized, decreasing = TRUE),] 
       
-      # Непонятно, какой результат при смещении оси координат нужен
-      # min_abs_dynamism <- abs(min(tdm_df_with_dynamism$dynamism))
-      # Смещение оси координат так, чтобы все значения динамики были >= 0. 
-      # Для этого для всех выводимых слов к значениям динамики 
-      # прибавляют модуль минимального значения динамики
-      ggplot(tdm_df_with_dynamism[1:amount_of_words_in_plot, ], aes(x = dynamism, y = freq_all, label = word)) +
-        geom_point() +
-        geom_text_repel(max.overlaps = 40) +
-        labs(x = "Динамика", y = "Значимость", title = paste0("Тренд-карта для ", amount_of_words_in_plot, " слов")) +
-        theme_classic()
-    })
+      
+      
+      output$compareFilesTable <- renderTable({
+        cos.mat
+      })
+      output$dynamicPlotAll <- renderPlot({
+        # Вывод всех слов на графике, кроме тех, которые пересекаются
+        # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
+        ggplot(tdm_df_with_dynamism, aes(x = dynamism, y = freq_all, label = word)) +
+          geom_point() +
+          geom_text_repel(max.overlaps = 10, max.time = 0.2) +
+          labs(x = "Динамика", y = "Значимость", title = "Тренд-карта для всех слов") +
+          theme_minimal()
+      })
+      output$dynamicPlotLimited <- renderPlot({
+        amount_of_words_in_plot <- 30
+        # Вывод графика для amount_of_words_in_plot слов без пересечений слов на графике. 
+        # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
+        
+        # Непонятно, какой результат при смещении оси координат нужен
+        # min_abs_dynamism <- abs(min(tdm_df_with_dynamism$dynamism))
+        # Смещение оси координат так, чтобы все значения динамики были >= 0. 
+        # Для этого для всех выводимых слов к значениям динамики 
+        # прибавляют модуль минимального значения динамики
+        ggplot(tdm_df_with_dynamism[1:amount_of_words_in_plot, ], aes(x = dynamism, y = freq_all, label = word)) +
+          geom_point() +
+          geom_text_repel(max.overlaps = 40) +
+          labs(x = "Динамика", y = "Значимость", title = paste0("Тренд-карта для ", amount_of_words_in_plot, " слов")) +
+          theme_classic()
+      })
+    }
   }
   
   
@@ -851,6 +854,7 @@ server <- function(input, output, session) {
   
   
   observeEvent(input$analyze1, {
+    showNotification("Ведутся вычисления.")
     if (input$radio == 1) 
     {
       files_preprocessed_data_frequency[["df_1"]] <- AnalyzeAndRenderFrequency(input[["file1"]], "barPlot1", "wordTable1", "wordcloud1")
@@ -859,6 +863,7 @@ server <- function(input, output, session) {
     {
       files_preprocessed_data_rake[["df_1"]] <- AnalyzeAndRenderRake(input[["file1"]], "barPlot1", "wordTable1", "wordcloud1")
     }
+    showNotification("Вычисления окончены.")
   })
   observeEvent(input$analyze2, {
     if (input$radio == 1) 
