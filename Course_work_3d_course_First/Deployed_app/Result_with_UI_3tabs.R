@@ -398,7 +398,11 @@ server <- function(input, output, session) {
   }
   
   GetRakeKeywords <- function(file) {
+    # Проверка на корректность ввода файла. 
+    # Если файл введен некорректно, то событие (ObserveEvent), 
+    # вызввавшее функцию останавливаетя.
     req(file)
+    showNotification("Ведутся вычисления.")
     input_data <- as.data.frame(read_excel(file$datapath, col_names = FALSE)) 
     # load_stopwords()
     # Было:
@@ -467,7 +471,11 @@ server <- function(input, output, session) {
   
   # все команды этой функции совпадают с соотв-ми командами алгоритма для 14 регионов
   GetPreprocessedTextsWordList <- function(file) {   
+    # Проверка на корректность ввода файла. 
+    # Если файл введен некорректно, то событие (ObserveEvent), 
+    # вызввавшее функцию останавливаетя.
     req(file)
+    showNotification("Ведутся вычисления.")
     input_data <- as.data.frame(read_excel(file$datapath, col_names = FALSE)) 
     # load_stopwords()
     corp_city_df <- CleanCorpusFrequency(VCorpus(VectorSource(input_data)))
@@ -549,6 +557,7 @@ server <- function(input, output, session) {
     output[[wordcloud_output]] <- renderWordcloud2({
       Wordcloud2a(keywords_rake_df_for_output[c("keyword", "freq")], size = 0.45)
     })
+    showNotification("Вычисления окончены.")
     return(keywords_rake_df)
   }
   
@@ -577,9 +586,11 @@ server <- function(input, output, session) {
     output[[wordcloud_output]] <- renderWordcloud2({
       Wordcloud2a(word_freq, size = 0.45)
     })
+    showNotification("Вычисления окончены.")
     return(d)
   }
-  
+
+    
   ObserveEventCompareFilesBtnFrequency <- function(){
     d_all <- Filter(Negate(is.null), list(files_preprocessed_data_frequency[["df_1"]], 
                                           files_preprocessed_data_frequency[["df_2"]], 
@@ -854,7 +865,6 @@ server <- function(input, output, session) {
   
   
   observeEvent(input$analyze1, {
-    showNotification("Ведутся вычисления.")
     if (input$radio == 1) 
     {
       files_preprocessed_data_frequency[["df_1"]] <- AnalyzeAndRenderFrequency(input[["file1"]], "barPlot1", "wordTable1", "wordcloud1")
@@ -863,7 +873,7 @@ server <- function(input, output, session) {
     {
       files_preprocessed_data_rake[["df_1"]] <- AnalyzeAndRenderRake(input[["file1"]], "barPlot1", "wordTable1", "wordcloud1")
     }
-    showNotification("Вычисления окончены.")
+    
   })
   observeEvent(input$analyze2, {
     if (input$radio == 1) 
