@@ -285,27 +285,32 @@ basic_punctuation_marks_list <- c('.', ',', ';', ':', '!', '?', '-', '"', '(',
                                   ')', '«', '»')
 
 label_radio_buttons <- "Метод излечения ключевых слов:"
-action_output_results <- "Вывод результатов"
+label_action_output_results <- "Вывод результатов"
 label_choose_file <- "Выбор файла"
+label_input_file_button <- "Открыть..."
+label_input_placeholder <- "Файл не выбран"
 width_of_sidebar_panel <- 5
 width_of_main_panel <- 7
 
 ui <- fluidPage(
   titlePanel("Анализ регионов по разным периодам"),
+  radioButtons( 
+    inputId = "radio", 
+    label = label_radio_buttons, 
+    choices = list( 
+      "Частотный" = 1, 
+      "RAKE" = 2
+    )
+  ), 
   tabsetPanel(id = "tabs",
               tabPanel("Период 1",
                        sidebarLayout(
                          sidebarPanel(
-                           radioButtons( 
-                             inputId = "radio1", 
-                             label = label_radio_buttons, 
-                             choices = list( 
-                               "Частотный" = 1, 
-                               "RAKE" = 2
-                             )
-                           ), 
-                           fileInput("file1", label_choose_file, accept = ".xlsx"),
-                           actionButton("analyze1", action_output_results),
+                           fileInput("file1", label = label_choose_file, 
+                                     buttonLabel = label_input_file_button, 
+                                     placeholder = label_input_placeholder,
+                                     accept = ".xlsx"),
+                           actionButton("analyze1", label_action_output_results),
                            width = width_of_sidebar_panel
                          ),
                          mainPanel(
@@ -320,16 +325,11 @@ ui <- fluidPage(
               tabPanel("Период 2",
                        sidebarLayout(
                          sidebarPanel(
-                           radioButtons( 
-                             inputId = "radio2", 
-                             label = label_radio_buttons, 
-                             choices = list( 
-                               "Частотный" = 1, 
-                               "RAKE" = 2
-                             ) 
-                           ), 
-                           fileInput("file2", label_choose_file, accept = ".xlsx"),
-                           actionButton("analyze2", action_output_results),
+                           fileInput("file2", label = label_choose_file, 
+                                     buttonLabel = label_input_file_button, 
+                                     placeholder = label_input_placeholder,
+                                     accept = ".xlsx"),
+                           actionButton("analyze2", label_action_output_results),
                            width = width_of_sidebar_panel
                          ),
                          mainPanel(
@@ -343,16 +343,11 @@ ui <- fluidPage(
               tabPanel("Период 3",
                        sidebarLayout(
                          sidebarPanel(
-                           radioButtons( 
-                             inputId = "radio3", 
-                             label = label_radio_buttons, 
-                             choices = list( 
-                               "Частотный" = 1, 
-                               "RAKE" = 2
-                             ) 
-                           ), 
-                           fileInput("file3", label_choose_file, accept = ".xlsx"),
-                           actionButton("analyze3", action_output_results),
+                           fileInput("file3", label = label_choose_file, 
+                                     buttonLabel = label_input_file_button, 
+                                     placeholder = label_input_placeholder,
+                                     accept = ".xlsx"),
+                           actionButton("analyze3", label_action_output_results),
                            width = width_of_sidebar_panel
                          ),
                          mainPanel(
@@ -363,15 +358,7 @@ ui <- fluidPage(
                          )
                        )
               ),
-              tabPanel("Сравнить файлы",
-                       radioButtons( 
-                         inputId = "radioCompare", 
-                         label = "Метод излечения ключевых слов:", 
-                         choices = list( 
-                           "Частотный" = 1, 
-                           "RAKE" = 2
-                         ) 
-                       ), 
+              tabPanel("Оценка динамики",
                        actionButton("compareFilesBtn", "Сравнить проанализированные файлы"),
                        tableOutput("compareFilesTable"),
                        plotOutput("dynamicPlotAll"),
@@ -485,6 +472,7 @@ server <- function(input, output, session) {
     # load_stopwords()
     corp_city_df <- CleanCorpusFrequency(VCorpus(VectorSource(input_data)))
     corp_city_df[["1"]][["content"]] <- gsub("[\U{1F600}-\U{1F64F}\U{1F300}-\U{1F5FF}\U{1F680}-\U{1F6FF}\U{1F1E0}-\U{1F1FF}\U{2500}-\U{2BEF}\U{2702}-\U{27B0}\U{24C2}-\U{1F251}\U{1f926}-\U{1f937}\U{10000}-\U{10ffff}\u{2640}-\u{2642}\u{2600}-\u{2B55}\u{200d}\u{23cf}\u{23e9}\u{231a}\u{fe0f}\u{3030}\U{00B0}\U{20BD}]", "", corp_city_df[["1"]][["content"]], perl = TRUE)
+    corp_city_df[["1"]][["content"]] <- gsub("\\b\\S*(http|vk)\\S*\\b", "", corp_city_df[["1"]][["content"]], perl = TRUE)
     if (!file.exists('russian-gsd-ud-2.5-191206.udpipe'))
     {
       gsd_model_raw <- udpipe_download_model(language = "russian-gsd")
@@ -863,41 +851,41 @@ server <- function(input, output, session) {
   
   
   observeEvent(input$analyze1, {
-    if (input$radio1 == 1) 
+    if (input$radio == 1) 
     {
       files_preprocessed_data_frequency[["df_1"]] <- AnalyzeAndRenderFrequency(input[["file1"]], "barPlot1", "wordTable1", "wordcloud1")
     }
-    else if (input$radio1 == 2)
+    else if (input$radio == 2)
     {
       files_preprocessed_data_rake[["df_1"]] <- AnalyzeAndRenderRake(input[["file1"]], "barPlot1", "wordTable1", "wordcloud1")
     }
   })
   observeEvent(input$analyze2, {
-    if (input$radio2 == 1) 
+    if (input$radio == 1) 
     {
       files_preprocessed_data_frequency[["df_2"]] <- AnalyzeAndRenderFrequency(input[["file2"]], "barPlot2", "wordTable2", "wordcloud2")
     }
-    else if (input$radio2 == 2)
+    else if (input$radio == 2)
     {
       files_preprocessed_data_rake[["df_2"]] <- AnalyzeAndRenderRake(input[["file2"]], "barPlot2", "wordTable2", "wordcloud2")
     }
   })
   observeEvent(input$analyze3, {
-    if (input$radio3 == 1) 
+    if (input$radio == 1) 
     {
       files_preprocessed_data_frequency[["df_3"]] <- AnalyzeAndRenderFrequency(input[["file3"]], "barPlot3", "wordTable3", "wordcloud3")
     }
-    if (input$radio3 == 2)
+    if (input$radio == 2)
     {
       files_preprocessed_data_rake[["df_3"]] <- AnalyzeAndRenderRake(input[["file3"]], "barPlot3", "wordTable3", "wordcloud3")
     }
   })
   observeEvent(input[["compareFilesBtn"]], {
-    if (input$radioCompare == 1) 
+    if (input$radio == 1) 
     {
       ObserveEventCompareFilesBtnFrequency()
     }
-    if (input$radioCompare == 2)
+    if (input$radio == 2)
     {
       ObserveEventCompareFilesBtnRake()
     }
