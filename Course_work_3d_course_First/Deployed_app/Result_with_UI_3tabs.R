@@ -284,6 +284,12 @@ stopwords_combined_str <- paste(stopwords_combined_list, collapse = "|")
 basic_punctuation_marks_list <- c('.', ',', ';', ':', '!', '?', '-', '"', '(',
                                   ')', '«', '»')
 
+label_radio_buttons <- "Метод излечения ключевых слов:"
+action_output_results <- "Вывод результатов"
+label_choose_file <- "Выбор файла"
+width_of_sidebar_panel <- 5
+width_of_main_panel <- 7
+
 ui <- fluidPage(
   titlePanel("Анализ регионов по разным периодам"),
   tabsetPanel(id = "tabs",
@@ -292,20 +298,22 @@ ui <- fluidPage(
                          sidebarPanel(
                            radioButtons( 
                              inputId = "radio1", 
-                             label = "Метод излечения ключевых слов:", 
+                             label = label_radio_buttons, 
                              choices = list( 
                                "Частотный" = 1, 
                                "RAKE" = 2
-                             ) 
+                             )
                            ), 
-                           fileInput("file1", "Выберите Excel файл 1", accept = ".xlsx"),
-                           actionButton("analyze1", "Анализировать файл 1"),
+                           fileInput("file1", label_choose_file, accept = ".xlsx"),
+                           actionButton("analyze1", action_output_results),
+                           width = width_of_sidebar_panel
                          ),
                          mainPanel(
                            plotOutput("barPlot1"),
                            wordcloud2Output("wordcloud1"),
                            #plotOutput("wordcloud1"),
-                           tableOutput("wordTable1")
+                           tableOutput("wordTable1"),
+                           width = width_of_main_panel
                          )
                        )
               ),
@@ -314,20 +322,21 @@ ui <- fluidPage(
                          sidebarPanel(
                            radioButtons( 
                              inputId = "radio2", 
-                             label = "Метод излечения ключевых слов:", 
+                             label = label_radio_buttons, 
                              choices = list( 
                                "Частотный" = 1, 
                                "RAKE" = 2
                              ) 
                            ), 
-                           fileInput("file2", "Выберите Excel файл 2", accept = ".xlsx"),
-                           actionButton("analyze2", "Анализировать файл 2"),
-                           
+                           fileInput("file2", label_choose_file, accept = ".xlsx"),
+                           actionButton("analyze2", action_output_results),
+                           width = width_of_sidebar_panel
                          ),
                          mainPanel(
                            plotOutput("barPlot2"),
                            wordcloud2Output("wordcloud2"),
-                           tableOutput("wordTable2")
+                           tableOutput("wordTable2"),
+                           width = width_of_main_panel
                          )
                        )
               ),
@@ -336,20 +345,21 @@ ui <- fluidPage(
                          sidebarPanel(
                            radioButtons( 
                              inputId = "radio3", 
-                             label = "Метод излечения ключевых слов:", 
+                             label = label_radio_buttons, 
                              choices = list( 
                                "Частотный" = 1, 
                                "RAKE" = 2
                              ) 
                            ), 
-                           fileInput("file3", "Выберите Excel файл 3", accept = ".xlsx"),
-                           actionButton("analyze3", "Анализировать файл 3"),
-                           
+                           fileInput("file3", label_choose_file, accept = ".xlsx"),
+                           actionButton("analyze3", action_output_results),
+                           width = width_of_sidebar_panel
                          ),
                          mainPanel(
                            plotOutput("barPlot3"),
                            wordcloud2Output("wordcloud3"),
-                           tableOutput("wordTable3")
+                           tableOutput("wordTable3"), 
+                           width = width_of_main_panel
                          )
                        )
               ),
