@@ -425,8 +425,33 @@ server <- function(input, output, session) {
     x <- as.data.frame(x)
     # до сюда строки повторяют код функции GetPreprocessedTextsWordList
     # show(x)
-    # x$lemma <- str_replace_all(x$lemma, "[[:punct:]]", "")
-    tmp <- x$lemma
+    
+    tmp <- x$lemma 
+    
+    tmp <- gsub("[[:punct:]]", "", tmp)
+    # for (i in 1:length(tmp))
+    # {
+    #   show(tmp[i])
+    #   # если количество символов > 1
+    #   if (nchar(tmp[i]) > 1)
+    #   {
+    #     # Если термин начинается со знака пунктуации, то удалить 
+    #     # все идущие подраяд с начала знаки пунктуации
+    #     while(str_sub(tmp[i], 1, 1) %in% basic_punctuation_marks_list)
+    #     {
+    #       tmp[i] <- str_sub(tmp[i], 2, -1)
+    #     }
+    #     # Если термин заканчивается знаком пунктуации, то удалить 
+    #     # все идущие подраяд с конца знаки пунктуации
+    #     show(str_sub(tmp[i], 1, -2))
+    #     while(str_sub(tmp[i], -1, -1) %in% basic_punctuation_marks_list)
+    #     {
+    #       tmp[i] <- str_sub(tmp[i], 1, -2)
+    #     }
+    #   }
+    #   
+    # }
+    # 
     
     # tmp <- str_replace_all(tmp, '№', '')
     # tmp <- str_replace_all(tmp, '−', '')
@@ -683,28 +708,44 @@ server <- function(input, output, session) {
       output$dynamicPlotAll <- renderPlot({
         # Вывод всех слов на графике, кроме тех, которые пересекаются
         # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
-        ggplot(tdm_df_with_dynamism, aes(x = dynamism, y = freq_all, label = word)) +
+        dynamicPlotAll <- ggplot(tdm_df_with_dynamism, aes(x = dynamism, y = freq_all, label = word)) +
           geom_point() +
           geom_text_repel(max.overlaps = 10, max.time = 0.2) +
           labs(x = "Динамика", y = "Значимость", title = "Тренд-карта для всех слов") +
           theme_minimal()
+        return(dynamicPlotAll)
       })
+      
+     
       output$dynamicPlotLimited <- renderPlot({
         amount_of_words_in_plot <- 30
         # Вывод графика для amount_of_words_in_plot слов без пересечений слов на графике. 
         # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
         
-        # Непонятно, какой результат при смещении оси координат нужен
-        # min_abs_dynamism <- abs(min(tdm_df_with_dynamism$dynamism))
+        
+        # tdm_df_with_dynamism_limited <- tdm_df_with_dynamism[1:amount_of_words_in_plot, ]
+        # value_for_norm_of_dynamic_for_30 <- ifelse(min(rake_df_with_dynamism_limited$dynamism) < 0,
+        #                                            -min(rake_df_with_dynamism_limited$dynamism), 0)
+        # rake_df_with_dynamism_limited$dynamism_normalized_for_30 <- (rake_df_with_dynamism_limited$dynamism +
+        #                                                                value_for_norm_of_dynamic_for_30) /
+        #   ifelse(max(rake_df_with_dynamism_limited$dynamism + value_for_norm_of_dynamic_for_30) != 0,
+        #          max(rake_df_with_dynamism_limited$dynamism + value_for_norm_of_dynamic_for_30), 1)
+        # rake_df_with_dynamism_limited$rake_all_normalized_for_30 <- (rake_df_with_dynamism_limited$rake_all) /
+        #   ifelse(max(rake_df_with_dynamism_limited$rake_all) != 0,
+        #          max(rake_df_with_dynamism_limited$rake_all), 1)
+
+        
+        
         # Смещение оси координат так, чтобы все значения динамики были >= 0. 
         # Для этого для всех выводимых слов к значениям динамики 
         # прибавляют модуль минимального значения динамики
-        ggplot(tdm_df_with_dynamism[1:amount_of_words_in_plot, ], aes(x = dynamism, y = freq_all, label = word)) +
+        dynamicPlotLimited <- ggplot(tdm_df_with_dynamism[1:amount_of_words_in_plot, ], aes(x = dynamism, y = freq_all, label = word)) +
           geom_point() +
           geom_text_repel(max.overlaps = 40) +
           labs(x = "Динамика", y = "Значимость", title = paste0("Тренд-карта для ", amount_of_words_in_plot, " слов")) +
           theme_classic()
         showNotification(label_calculation_end, duration = time_of_notification_duration)
+        return(dynamicPlotLimited)
       })
     }
   }
@@ -839,21 +880,42 @@ server <- function(input, output, session) {
         
         # Нормализация данных для отображения точек на 
         # отрезки [0, 1] для 30 слов
-        # Смещение оси координат так, чтобы все значения динамики были >= 0.
-        # Для этого для всех выводимых слов к значениям динамики
-        # прибавляют модуль минимального значения динамики. 
-        # После этого производят деление на максимум для 30 слов
-        rake_df_with_dynamism_limited <- rake_df_with_dynamism[1:amount_of_words_in_plot, ]
-        value_for_norm_of_dynamic_for_30 <- ifelse(min(rake_df_with_dynamism_limited$dynamism) < 0, 
-                                                   -min(rake_df_with_dynamism_limited$dynamism), 0)
-        rake_df_with_dynamism_limited$dynamism_normalized_for_30 <- (rake_df_with_dynamism_limited$dynamism +
-                                                                       value_for_norm_of_dynamic_for_30) /
-          ifelse(max(rake_df_with_dynamism_limited$dynamism + value_for_norm_of_dynamic_for_30) != 0,
-                 max(rake_df_with_dynamism_limited$dynamism + value_for_norm_of_dynamic_for_30), 1)
-        rake_df_with_dynamism_limited$rake_all_normalized_for_30 <- (rake_df_with_dynamism_limited$rake_all) /
-          ifelse(max(rake_df_with_dynamism_limited$rake_all) != 0,
-                 max(rake_df_with_dynamism_limited$rake_all), 1)
         
+        # Выделение 30 слов с наибольшими значениями sum_of_rake_all_norm_and_dyn_norm 
+        rake_df_with_dynamism_limited <- rake_df_with_dynamism[1:amount_of_words_in_plot, ]
+        
+  
+        # Нормализация динамики для 30 слов
+        
+        # Нужно сместить все значения динамики, чтобы их минимум был в 0.
+        # Если минимум отрицательный, то при его вычитании из остальных значений
+        # новый минимум окажется в нуле (так как минус на минус дает плюс).
+        # Если минимум положительный, то при его вычитании из остальных значений
+        # новый минимум так же окажется в нуле.
+        rake_df_with_dynamism_limited$dynamism_shifted_for_30 <- rake_df_with_dynamism_limited$dynamism - 
+          min(rake_df_with_dynamism_limited$dynamism)
+        
+        
+        # После смещения все значения делятся на новый максимум, 
+        # чтобы отобразить все значения динамики на отрезок [0; 1].
+        rake_df_with_dynamism_limited$dynamism_normalized_for_30 <- rake_df_with_dynamism_limited$dynamism_shifted_for_30 /
+          ifelse(max(rake_df_with_dynamism_limited$dynamism_shifted_for_30) != 0,
+                 max(rake_df_with_dynamism_limited$dynamism_shifted_for_30), 1)
+        
+        
+        # Нормализация rake_all для 30 слов
+        
+        # rake_df_with_dynamism_limited$rake_all >= 0.
+        # Нужно сместить все значения rake_all, чтобы их минимум был в 0.
+        # rake_all >= 0. Значит при вычитании минимума из всех значенией, 
+        # новый минимум окажется в нуле.
+        rake_df_with_dynamism_limited$rake_all_shifted_for_30 <- rake_df_with_dynamism_limited$rake_all - min(rake_df_with_dynamism_limited$rake_all)
+        
+        # После смещения все значения делятся на новый максимум, 
+        # чтобы отобразить все значения rake_all на отрезок [0; 1].
+        rake_df_with_dynamism_limited$rake_all_normalized_for_30 <- (rake_df_with_dynamism_limited$rake_all_shifted_for_30) /
+          ifelse(max(rake_df_with_dynamism_limited$rake_all_shifted_for_30) != 0,
+                 max(rake_df_with_dynamism_limited$rake_all_shifted_for_30), 1)
         
         
         plot_limited <- ggplot(rake_df_with_dynamism_limited, aes(x = dynamism_normalized_for_30, y = rake_all_normalized_for_30, label = keyword)) +
