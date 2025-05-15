@@ -723,23 +723,51 @@ server <- function(input, output, session) {
         # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
         
         
-        # tdm_df_with_dynamism_limited <- tdm_df_with_dynamism[1:amount_of_words_in_plot, ]
-        # value_for_norm_of_dynamic_for_30 <- ifelse(min(rake_df_with_dynamism_limited$dynamism) < 0,
-        #                                            -min(rake_df_with_dynamism_limited$dynamism), 0)
-        # rake_df_with_dynamism_limited$dynamism_normalized_for_30 <- (rake_df_with_dynamism_limited$dynamism +
-        #                                                                value_for_norm_of_dynamic_for_30) /
-        #   ifelse(max(rake_df_with_dynamism_limited$dynamism + value_for_norm_of_dynamic_for_30) != 0,
-        #          max(rake_df_with_dynamism_limited$dynamism + value_for_norm_of_dynamic_for_30), 1)
-        # rake_df_with_dynamism_limited$rake_all_normalized_for_30 <- (rake_df_with_dynamism_limited$rake_all) /
-        #   ifelse(max(rake_df_with_dynamism_limited$rake_all) != 0,
-        #          max(rake_df_with_dynamism_limited$rake_all), 1)
-
+        # Нормализация данных для отображения точек на 
+        # отрезки [0, 1] для 30 слов
+        
+        # Выделение 30 слов с наибольшими значениями sum_of_rake_all_norm_and_dyn_norm 
+        tdm_df_with_dynamism_limited <- tdm_df_with_dynamism[1:amount_of_words_in_plot, ]
+        
+        
+        # Нормализация динамики для 30 слов
+        
+        # Нужно сместить все значения динамики, чтобы их минимум был в 0.
+        # Если минимум отрицательный, то при его вычитании из остальных значений
+        # новый минимум окажется в нуле (так как минус на минус дает плюс).
+        # Если минимум положительный, то при его вычитании из остальных значений
+        # новый минимум так же окажется в нуле.
+        tdm_df_with_dynamism_limited$dynamism_shifted_for_30 <- tdm_df_with_dynamism_limited$dynamism - 
+          min(tdm_df_with_dynamism_limited$dynamism)
+        
+        
+        # После смещения все значения делятся на новый максимум, 
+        # чтобы отобразить все значения динамики на отрезок [0; 1].
+        tdm_df_with_dynamism_limited$dynamism_normalized_for_30 <- tdm_df_with_dynamism_limited$dynamism_shifted_for_30 /
+          ifelse(max(tdm_df_with_dynamism_limited$dynamism_shifted_for_30) != 0,
+                 max(tdm_df_with_dynamism_limited$dynamism_shifted_for_30), 1)
+        
+        
+        # Нормализация частоты встречамости для 30 слов
+        
+        # tdm_df_with_dynamism_limited$freq_all >= 0.
+        # Нужно сместить все значения freq_all, чтобы их минимум был в 0.
+        # freq_all >= 0. Значит при вычитании минимума из всех значенией, 
+        # новый минимум окажется в нуле.
+        tdm_df_with_dynamism_limited$freq_all_shifted_for_30 <- tdm_df_with_dynamism_limited$freq_all - min(tdm_df_with_dynamism_limited$freq_all)
+        
+        # После смещения все значения делятся на новый максимум, 
+        # чтобы отобразить все значения rake_all на отрезок [0; 1].
+        tdm_df_with_dynamism_limited$freq_all_normalized_for_30 <- (tdm_df_with_dynamism_limited$freq_all_shifted_for_30) /
+          ifelse(max(tdm_df_with_dynamism_limited$freq_all_shifted_for_30) != 0,
+                 max(tdm_df_with_dynamism_limited$freq_all_shifted_for_30), 1)
+        
         
         
         # Смещение оси координат так, чтобы все значения динамики были >= 0. 
         # Для этого для всех выводимых слов к значениям динамики 
         # прибавляют модуль минимального значения динамики
-        dynamicPlotLimited <- ggplot(tdm_df_with_dynamism[1:amount_of_words_in_plot, ], aes(x = dynamism, y = freq_all, label = word)) +
+        dynamicPlotLimited <- ggplot(tdm_df_with_dynamism_limited[1:amount_of_words_in_plot, ], aes(x = dynamism_normalized_for_30, y = freq_all_normalized_for_30, label = word)) +
           geom_point() +
           geom_text_repel(max.overlaps = 40) +
           labs(x = "Динамика", y = "Значимость", title = paste0("Тренд-карта для ", amount_of_words_in_plot, " слов")) +
