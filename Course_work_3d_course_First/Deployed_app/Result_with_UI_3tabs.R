@@ -5,7 +5,7 @@ InstallOrLoadPack <- function(packs){
   sapply(packs, library, character.only = TRUE)
 }
 packages <- c("ggrepel", "ggplot2",  "data.table", "tm", "wordcloud2", "tidytext", "dplyr", 'tidyverse', 'readxl', 'udpipe', 'writexl', 'openxlsx', 'rlang', 'lsa', 'shiny')
-
+ 
 InstallOrLoadPack(packages)
 # Нужен ли пакет "Rcpp"? Все ли из подключаемых пакетов нужны? Как это проверить?
 # Проверить можно с помощью убирания пакета из загружаемых и попытки запуска программы,
@@ -795,7 +795,7 @@ server <- function(input, output, session) {
       if (length(d_all) == 2) {
         d_all <- full_join(d_all[[1]], d_all[[2]], by='keyword')
         d_all <- d_all %>% replace(is.na (.), 0)
-        show(d_all)
+        # show(d_all)
         rake_df <- select(d_all, 'keyword', 'rake.x', 'rake.y')
         names(rake_df) <- c('keyword', 'rake1', 'rake2')
         # show(rake_df)
