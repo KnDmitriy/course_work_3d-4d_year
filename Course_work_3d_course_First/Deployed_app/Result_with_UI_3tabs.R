@@ -302,7 +302,7 @@ ui <- fluidPage(
     inputId = "radio", 
     label = label_radio_buttons, 
     choices = list( 
-      "Частотный" = 1, 
+      "TF" = 1, 
       "RAKE" = 2
     )
   ), 
@@ -488,7 +488,7 @@ server <- function(input, output, session) {
     keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"),
                                       relevant = x$upos %in% c("NOUN", "ADJ") &
                                         !(x$lemma %in% stopwords_combined_list),
-                                      n_min = 0)
+                                      n_min = 30)
     # keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"),
     #                                   relevant = x$upos %in% c("NOUN", "ADJ") &
     #                                     !(x$lemma %in% stopwords_combined_list) &
@@ -803,7 +803,7 @@ server <- function(input, output, session) {
         # names(tdm_df) <- c('word', 'freq1', 'freq2')
         # tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2') != 0))
         # tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
-        
+        cos.mat <- cosine(as.matrix(select(rake_df, 'rake1', 'rake2')))
         rake_df_with_dynamism <- rake_df
         rake_df_with_dynamism$rake_all <- rake_df_with_dynamism$rake1 + rake_df_with_dynamism$rake2
         
@@ -821,6 +821,8 @@ server <- function(input, output, session) {
         # tf_idf <- tf_idf %>% mutate(tf_idf1 = tf1 * idf)
         # tf_idf <- tf_idf %>% mutate(tf_idf2 = tf2 * idf)
         # tf_idf_only <- select(tf_idf, 'tf_idf1', 'tf_idf2')
+        
+        
         # names(tf_idf_only) <- c("Период 1", "Период 2")
         # cos.mat <- cosine(as.matrix(tf_idf_only))  # Removes the first column for cosine calculation
       }
@@ -835,7 +837,7 @@ server <- function(input, output, session) {
         # names(tdm_df) <- c('word', 'freq1', 'freq2', 'freq3')
         # tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2', 'freq3') != 0))
         # tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
-        
+        cos.mat <- cosine(as.matrix(select(rake_df, 'rake1', 'rake2', 'rake3')))
         rake_df_with_dynamism <- rake_df
         rake_df_with_dynamism$rake_all <- rake_df_with_dynamism$rake1 + rake_df_with_dynamism$rake2 + rake_df_with_dynamism$rake3
         
@@ -886,9 +888,9 @@ server <- function(input, output, session) {
       #
       #
       #
-      # output$compareFilesTable <- renderTable({
-      #   cos.mat
-      # })
+      output$compareFilesTable <- renderTable({
+        cos.mat
+      })
       output$dynamicPlotAll <- renderPlot({
         # Вывод всех слов на графике, кроме тех, которые пересекаются
         # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
