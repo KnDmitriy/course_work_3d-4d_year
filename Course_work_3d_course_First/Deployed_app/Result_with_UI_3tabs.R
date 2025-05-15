@@ -488,7 +488,7 @@ server <- function(input, output, session) {
     keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"),
                                       relevant = x$upos %in% c("NOUN", "ADJ") &
                                         !(x$lemma %in% stopwords_combined_list),
-                                      n_min = 30)
+                                      n_min = 20)
     # keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"),
     #                                   relevant = x$upos %in% c("NOUN", "ADJ") &
     #                                     !(x$lemma %in% stopwords_combined_list) &
