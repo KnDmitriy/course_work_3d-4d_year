@@ -362,6 +362,42 @@ ui <- fluidPage(
                          )
                        )
               ),
+              tabPanel("Период 4",
+                       sidebarLayout(
+                         sidebarPanel(
+                           fileInput("file4", label = label_choose_file, 
+                                     buttonLabel = label_input_file_button, 
+                                     placeholder = label_input_placeholder,
+                                     accept = ".xlsx"),
+                           actionButton("analyze4", label_action_output_results),
+                           width = width_of_sidebar_panel
+                         ),
+                         mainPanel(
+                           plotOutput("barPlot4"),
+                           wordcloud2Output("wordcloud4"),
+                           tableOutput("wordTable4"), 
+                           width = width_of_main_panel
+                         )
+                       )
+              ),
+              tabPanel("Период 5",
+                       sidebarLayout(
+                         sidebarPanel(
+                           fileInput("file5", label = label_choose_file, 
+                                     buttonLabel = label_input_file_button, 
+                                     placeholder = label_input_placeholder,
+                                     accept = ".xlsx"),
+                           actionButton("analyze5", label_action_output_results),
+                           width = width_of_sidebar_panel
+                         ),
+                         mainPanel(
+                           plotOutput("barPlot5"),
+                           wordcloud2Output("wordcloud5"),
+                           tableOutput("wordTable5"), 
+                           width = width_of_main_panel
+                         )
+                       )
+              ),
               tabPanel("Оценка динамики",
                        actionButton("compareFilesBtn", "Сравнить проанализированные файлы"),
                        tableOutput("compareFilesTable"),
@@ -488,7 +524,7 @@ server <- function(input, output, session) {
     keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"),
                                       relevant = x$upos %in% c("NOUN", "ADJ") &
                                         !(x$lemma %in% stopwords_combined_list),
-                                      n_min = 20)
+                                      n_min = 2)
     # keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"),
     #                                   relevant = x$upos %in% c("NOUN", "ADJ") &
     #                                     !(x$lemma %in% stopwords_combined_list) &
@@ -623,7 +659,9 @@ server <- function(input, output, session) {
   ObserveEventCompareFilesBtnFrequency <- function(){
     d_all <- Filter(Negate(is.null), list(files_preprocessed_data_frequency[["df_1"]], 
                                           files_preprocessed_data_frequency[["df_2"]], 
-                                          files_preprocessed_data_frequency[["df_3"]])) 
+                                          files_preprocessed_data_frequency[["df_3"]],
+                                          files_preprocessed_data_frequency[["df_4"]],
+                                          files_preprocessed_data_frequency[["df_5"]])) 
     cos.mat <- NULL
     if (length(d_all) <= 1) {
       showNotification("Для анализа должно быть обработано не менее двух файлов с помощью одного метода.", 
@@ -632,66 +670,123 @@ server <- function(input, output, session) {
     else 
     {  
       showNotification(label_calculation_begining, duration = time_of_notification_duration)
-      if (length(d_all) == 2) {
-        d_all <- full_join(d_all[[1]], d_all[[2]], by='word')
-        d_all <- d_all %>% replace(is.na (.), 0)
-        tf_idf <- select(d_all, 'word', 'freq.x', 'tf.x', 'freq.y','tf.y')
-        names(tf_idf) <- c('word', 'freq1', 'tf1', 'freq2', 'tf2')
-        tdm_df <- select(d_all, 'word', 'freq.x', 'freq.y')
-        names(tdm_df) <- c('word', 'freq1', 'freq2')
-        tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2') != 0))
-        tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
-        
-        tdm_df_with_dynamism <- tdm_df
-        tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq1 + tdm_df_with_dynamism$freq2
-        # ???
-        # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq2 - tdm_df_with_dynamism$freq1) / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)
-        
-        # Средний абсолютный прирост
-        tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq2 - tdm_df_with_dynamism$freq1) / 2
-        # Средний коэффициент роста (Средний темп роста)
-        # tdm_df_with_dynamism$dynamism <- sqrt((tdm_df_with_dynamism$freq3 / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)))
-        
-        
-        tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
-        tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
-        tf_idf <- tf_idf %>% mutate(tf_idf1 = tf1 * idf)
-        tf_idf <- tf_idf %>% mutate(tf_idf2 = tf2 * idf)
-        tf_idf_only <- select(tf_idf, 'tf_idf1', 'tf_idf2')
-        names(tf_idf_only) <- c("Период 1", "Период 2")
-        cos.mat <- cosine(as.matrix(tf_idf_only))  # Removes the first column for cosine calculation
+      amount_of_processed_files <- length(d_all)
+      # d_all[[i]] содержит таблицу со столбцами word freq tf
+      # Чтобы full_join происходил корректно, 
+      # и чтобы не нужно было переименовывать после него столбцы,
+      # нужно, чтобы все имена столбцов, кроме столбца, 
+      # по которому происходит соединение, были разными. 
+      # В данном случае для таблицы с номером i столбцы будут следующими:
+      # word freqi tfi.
+      for (i in  1:amount_of_processed_files)
+      {
+        names(d_all[[i]]) <- c("word", paste("freq", i, sep = ""), paste("tf", i, sep = ""))
       }
-      else if (length(d_all) == 3) {
-        d_all <- full_join(full_join(d_all[[1]], d_all[[2]], by='word'), d_all[[3]], by='word')
-        d_all <- d_all %>% replace(is.na (.), 0)
-        tf_idf <- select(d_all, 'word', 'freq.x', 'tf.x', 'freq.y','tf.y', 'freq', 'tf')
-        names(tf_idf) <- c('word', 'freq1', 'tf1', 'freq2', 'tf2', 'freq3', 'tf3')
-        tdm_df <- select(d_all, 'word', 'freq.x', 'freq.y', 'freq')
-        names(tdm_df) <- c('word', 'freq1', 'freq2', 'freq3')
-        tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2', 'freq3') != 0))
-        tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
-        
-        tdm_df_with_dynamism <- tdm_df
-        tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq1 + tdm_df_with_dynamism$freq2 + tdm_df_with_dynamism$freq3
-        # ???
-        # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1 + 1) / (tdm_df_with_dynamism$freq1 + 1)
-        
-        # Средний абсолютный прирост
-        tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1) / 2
-        # Средний коэффициент роста (Средний темп роста)
-        # tdm_df_with_dynamism$dynamism <- sqrt((tdm_df_with_dynamism$freq3 / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)))
-        
-        
-        
-        tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
-        tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
-        tf_idf <- tf_idf %>% mutate(tf_idf1 = tf1 * idf)
-        tf_idf <- tf_idf %>% mutate(tf_idf2 = tf2 * idf)
-        tf_idf <- tf_idf %>% mutate(tf_idf3 = tf3 * idf)
-        tf_idf_only <- select(tf_idf, 'tf_idf1', 'tf_idf2', 'tf_idf3')
-        names(tf_idf_only) <- c("Период 1", "Период 2", "Период 3")
-        cos.mat <- cosine(as.matrix(tf_idf_only))
+      res <- d_all[[1]]
+      # Соединение таблиц по столбцу word
+      for (i in  2:amount_of_processed_files)
+      {
+        res <- full_join(res, d_all[[i]], by = 'word')
       }
+      d_all <- res
+      
+      # Замена NA на 0
+      d_all <- d_all %>% replace(is.na (.), 0)
+      col_names_word_freq_tf <- c('word')
+      col_names_word_freq <- c('word')
+      col_names_freq <- c()
+      for (i in 1:amount_of_processed_files)
+      {
+        col_names_word_freq_tf <- c(col_names_word_freq_tf,  paste("freq", i, sep = ""), paste("tf", i, sep = ""))
+        col_names_word_freq <- c(col_names_word_freq, paste("freq", i, sep = ""))
+        col_names_freq <- c(col_names_freq, paste("freq", i, sep = ""))
+      }
+      # tf_idf <- select(d_all, 'word', 'freq1', 'tf1')
+      tf_idf <- d_all %>% select(all_of(col_names_word_freq_tf))
+      tdm_df <- d_all %>% select(all_of(col_names_word_freq))
+
+      tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, all_of(col_names_freq)) != 0))
+      tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
+
+      tdm_df_with_dynamism <- tdm_df
+
+      tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism[['freq1']]
+      for (i in 2:amount_of_processed_files)
+      {
+        tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq_all +
+          tdm_df_with_dynamism[[paste("freq", i, sep = "")]]
+      }
+      # ???
+      # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq2 - tdm_df_with_dynamism$freq1) / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)
+
+      # Средний абсолютный прирост
+
+      # Из частоты последнего периода вычитается частота первого периода
+      tdm_df_with_dynamism$dynamism <- tdm_df_with_dynamism[[paste("freq", amount_of_processed_files, sep = "")]] -
+        tdm_df_with_dynamism[["freq1"]]
+      # И результат делится на количество периодов - 1
+      tdm_df_with_dynamism$dynamism <- tdm_df_with_dynamism$dynamism / (amount_of_processed_files - 1)
+      # Средний коэффициент роста (Средний темп роста)
+      # tdm_df_with_dynamism$dynamism <- sqrt((tdm_df_with_dynamism$freq3 / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)))
+
+      tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
+      tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
+      # .data[[paste("tf_idf", amount_of_processed_files, sep = "")]]
+      col_names_tf <- c()
+      col_names_tfidf <- c()
+      for (i in 1:amount_of_processed_files)
+      {
+        col_name_tf <- paste0("tf", i, sep = "")
+        col_names_tf <- c(col_names_tf, col_name_tf)
+        col_name_tfidf <- paste0("tf_idf", i, sep = "")
+        col_names_tfidf <- c(col_names_tfidf, col_name_tfidf)
+        tf_idf <- tf_idf %>% mutate(!!col_name_tfidf :=
+                                      .data[[col_name_tf]] * idf)
+      }
+      # tf_idf <- tf_idf %>% mutate("tf_idf1" = .data[["tf1"]] * idf)
+      # tf_idf <- tf_idf %>% mutate(tf_idf2 = tf2 * idf)
+      tf_idf_only <- select(tf_idf, all_of(col_names_tfidf))
+      # tf_idf_only <- select(tf_idf, 'tf_idf1', 'tf_idf2')
+      period_names <- c()
+      for (i in 1:amount_of_processed_files)
+      {
+        period_names <- c(period_names, paste0("Период ", i, sep = ""))
+      }
+      names(tf_idf_only) <- period_names
+      # names(tf_idf_only) <- c("Период 1", "Период 2")
+      cos.mat <- cosine(as.matrix(tf_idf_only))  # Removes the first column for cosine calculation
+
+      # else if (amount_of_processed_files == 3) {
+      #   d_all <- full_join(full_join(d_all[[1]], d_all[[2]], by='word'), d_all[[3]], by='word')
+      #   d_all <- d_all %>% replace(is.na (.), 0)
+      #   tf_idf <- select(d_all, 'word', 'freq.x', 'tf.x', 'freq.y','tf.y', 'freq', 'tf')
+      #   names(tf_idf) <- c('word', 'freq1', 'tf1', 'freq2', 'tf2', 'freq3', 'tf3')
+      #   tdm_df <- select(d_all, 'word', 'freq.x', 'freq.y', 'freq')
+      #   names(tdm_df) <- c('word', 'freq1', 'freq2', 'freq3')
+      #   tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2', 'freq3') != 0))
+      #   tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
+      #   
+      #   tdm_df_with_dynamism <- tdm_df
+      #   tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq1 + tdm_df_with_dynamism$freq2 + tdm_df_with_dynamism$freq3
+      #   # ???
+      #   # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1 + 1) / (tdm_df_with_dynamism$freq1 + 1)
+      #   
+      #   # Средний абсолютный прирост
+      #   tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1) / 2
+      #   # Средний коэффициент роста (Средний темп роста)
+      #   # tdm_df_with_dynamism$dynamism <- sqrt((tdm_df_with_dynamism$freq3 / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)))
+      #   
+      #   
+      #   
+      #   tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
+      #   tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
+      #   tf_idf <- tf_idf %>% mutate(tf_idf1 = tf1 * idf)
+      #   tf_idf <- tf_idf %>% mutate(tf_idf2 = tf2 * idf)
+      #   tf_idf <- tf_idf %>% mutate(tf_idf3 = tf3 * idf)
+      #   tf_idf_only <- select(tf_idf, 'tf_idf1', 'tf_idf2', 'tf_idf3')
+      #   names(tf_idf_only) <- c("Период 1", "Период 2", "Период 3")
+      #   cos.mat <- cosine(as.matrix(tf_idf_only))
+      # }
       # ifelse(max(tdm_df_with_dynamism$freq_all) != 0, max(tdm_df_with_dynamism$freq_all), 1)  значит следующее.
       # Если max(tdm_df_with_dynamism$freq_all) != 0, то вернуть max(tdm_df_with_dynamism$freq_all),
       # иначе вернуть 1.
@@ -781,91 +876,152 @@ server <- function(input, output, session) {
   
   
   ObserveEventCompareFilesBtnRake <- function() {
-    d_all <- Filter(Negate(is.null), list(files_preprocessed_data_rake[["df_1"]], 
-                                          files_preprocessed_data_rake[["df_2"]], 
-                                          files_preprocessed_data_rake[["df_3"]])) 
+    d_all <- Filter(Negate(is.null), list(files_preprocessed_data_rake[["df_1"]],
+                                          files_preprocessed_data_rake[["df_2"]],
+                                          files_preprocessed_data_rake[["df_3"]],
+                                          files_preprocessed_data_rake[["df_4"]],
+                                          files_preprocessed_data_rake[["df_5"]]))
     cos.mat <- NULL
     if (length(d_all) <= 1) {
-      showNotification("Для анализа должно быть обработано не менее двух файлов с помощью одного метода.", 
+      showNotification("Для анализа должно быть обработано не менее двух файлов с помощью одного метода.",
                        duration = time_of_notification_duration)
     }
-    else 
+    else
     {
       showNotification(label_calculation_begining, duration = time_of_notification_duration)
-      if (length(d_all) == 2) {
-        d_all <- full_join(d_all[[1]], d_all[[2]], by='keyword')
+      amount_of_processed_files <- length(d_all)
+
+      # d_all[[i]] содержит таблицу со столбцами keyword ngram freq rake
+      # Чтобы full_join происходил корректно,
+      # и чтобы не нужно было переименовывать после него столбцы,
+      # нужно, чтобы все имена столбцов, кроме столбца,
+      # по которому происходит соединение, были разными.
+      # В данном случае для таблицы с номером i столбцы будут следующими:
+      # keyword freqi rakei.
+
+      # if (length(d_all) == 2) {
+
+        for (i in  1:amount_of_processed_files)
+        {
+          show(names(d_all[[i]]))
+          names(d_all[[i]]) <- c("keyword", paste("ngram", i, sep = ''), paste("freq", i, sep = ""), paste("rake", i, sep = ""))
+          show(names(d_all[[i]]))
+        }
+        res <- d_all[[1]]
+        # Соединение таблиц по столбцу keyword
+        for (i in  2:amount_of_processed_files)
+        {
+          res <- full_join(res, d_all[[i]], by = 'keyword')
+        }
+        d_all <- res
         d_all <- d_all %>% replace(is.na (.), 0)
-        # show(d_all)
-        rake_df <- select(d_all, 'keyword', 'rake.x', 'rake.y')
-        names(rake_df) <- c('keyword', 'rake1', 'rake2')
-        # show(rake_df)
+        # col_names_keyword_freq_tf <- c('keyword')
+        col_names_keyword_rake<- c('keyword')
+        col_names_rake <- c()
+        for (i in 1:amount_of_processed_files)
+        {
+          # col_names_keyword_freq_tf <- c(col_names_keyword_freq_tf,  paste("freq", i, sep = ""), paste("tf", i, sep = ""))
+          col_names_keyword_rake <- c(col_names_keyword_rake, paste("rake", i, sep = ""))
+          col_names_rake <- c(col_names_rake, paste("rake", i, sep = ""))
+        }
+
+       # d_all <- full_join(d_all[[1]], d_all[[2]], by='keyword')
+        # d_all <- d_all %>% replace(is.na (.), 0)
+        #rake_df <- select(d_all, 'keyword', 'rake.x', 'rake.y')
+        # names(rake_df) <- c('keyword', 'rake1', 'rake2')
+
+        rake_df <- select(d_all, 'keyword', all_of(col_names_keyword_rake))
+        rake_df_only <- select(d_all, all_of(col_names_rake))
+        # tf_idf_only <- select(tf_idf, 'tf_idf1', 'tf_idf2')
+        period_names <- c()
+        for (i in 1:amount_of_processed_files)
+        {
+          period_names <- c(period_names, paste0("Период ", i, sep = ""))
+        }
+        names(rake_df_only) <- period_names
+        show(rake_df_only)
         # tdm_df <- select(d_all, 'word', 'freq.x', 'freq.y')
         # names(tdm_df) <- c('word', 'freq1', 'freq2')
         # tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2') != 0))
         # tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
-        cos.mat <- cosine(as.matrix(select(rake_df, 'rake1', 'rake2')))
+        cos.mat <- cosine(as.matrix(rake_df_only))
         rake_df_with_dynamism <- rake_df
-        rake_df_with_dynamism$rake_all <- rake_df_with_dynamism$rake1 + rake_df_with_dynamism$rake2
-        
+
+        rake_df_with_dynamism$rake_all <- rake_df_with_dynamism[['rake1']]
+        for (i in 2:amount_of_processed_files)
+        {
+          rake_df_with_dynamism$rake_all <- rake_df_with_dynamism$rake_all +
+            rake_df_with_dynamism[[paste("rake", i, sep = "")]]
+        }
+
+        # rake_df_with_dynamism$rake_all <- rake_df_with_dynamism$rake1 + rake_df_with_dynamism$rake2
+
         # ???
         # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq2 - tdm_df_with_dynamism$freq1) / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)
-        
+
         # Средний абсолютный прирост
-        rake_df_with_dynamism$dynamism <- rake_df_with_dynamism$rake2 - rake_df_with_dynamism$rake1
+        rake_df_with_dynamism$dynamism <- rake_df_with_dynamism[[paste("rake", amount_of_processed_files, sep = "")]]
+        for (i in (amount_of_processed_files - 1):1)
+        {
+          rake_df_with_dynamism$dynamism <- (rake_df_with_dynamism$dynamism -
+            rake_df_with_dynamism[["rake1"]]) / (amount_of_processed_files - 1)
+        }
+
+        # rake_df_with_dynamism$dynamism <- rake_df_with_dynamism$rake2 - rake_df_with_dynamism$rake1
         # Средний коэффициент роста (Средний темп роста)
         # tdm_df_with_dynamism$dynamism <- sqrt((tdm_df_with_dynamism$freq3 / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)))
-        
-        
+
+
         # tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
         # tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
         # tf_idf <- tf_idf %>% mutate(tf_idf1 = tf1 * idf)
         # tf_idf <- tf_idf %>% mutate(tf_idf2 = tf2 * idf)
         # tf_idf_only <- select(tf_idf, 'tf_idf1', 'tf_idf2')
-        
-        
+
+
         # names(tf_idf_only) <- c("Период 1", "Период 2")
         # cos.mat <- cosine(as.matrix(tf_idf_only))  # Removes the first column for cosine calculation
-      }
-      if (length(d_all) == 3) {
-        d_all <- full_join(full_join(d_all[[1]], d_all[[2]], by='keyword'), d_all[[3]], by='keyword')
-        d_all <- d_all %>% replace(is.na (.), 0)
-        rake_df <- select(d_all, 'keyword', 'rake.x', 'rake.y', 'rake')
-        names(rake_df) <- c('keyword', 'rake1', 'rake2', 'rake3')
-        # tf_idf <- select(d_all, 'word', 'freq.x', 'tf.x', 'freq.y','tf.y', 'freq', 'tf')
-        # names(tf_idf) <- c('word', 'freq1', 'tf1', 'freq2', 'tf2', 'freq3', 'tf3')
-        # tdm_df <- select(d_all, 'word', 'freq.x', 'freq.y', 'freq')
-        # names(tdm_df) <- c('word', 'freq1', 'freq2', 'freq3')
-        # tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2', 'freq3') != 0))
-        # tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
-        cos.mat <- cosine(as.matrix(select(rake_df, 'rake1', 'rake2', 'rake3')))
-        rake_df_with_dynamism <- rake_df
-        rake_df_with_dynamism$rake_all <- rake_df_with_dynamism$rake1 + rake_df_with_dynamism$rake2 + rake_df_with_dynamism$rake3
-        
-        
-        # tdm_df_with_dynamism <- tdm_df
-        # tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq1 + tdm_df_with_dynamism$freq2 + tdm_df_with_dynamism$freq3
-        # tdm_df_with_dynamism$rake.all <- d_all[[1]]$rake + d_all[[2]]$rake + d_all[[3]]$rake
-        
-        # ???
-        # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1 + 1) / (tdm_df_with_dynamism$freq1 + 1)
-        
-        # Средний абсолютный прирост
-        rake_df_with_dynamism$dynamism <- (rake_df_with_dynamism$rake3 - rake_df_with_dynamism$rake1) / 2
-        # tdm_df_with_dynamism$dynamism <- (d_all[[3]]$rake - d_all[[1]]$rake) / 2
-        # Средний коэффициент роста (Средний темп роста)
-        # tdm_df_with_dynamism$dynamism <- sqrt((tdm_df_with_dynamism$freq3 / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)))
-        
-        
-        
-        # tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
-        # tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
-        # tf_idf <- tf_idf %>% mutate(tf_idf1 = tf1 * idf)
-        # tf_idf <- tf_idf %>% mutate(tf_idf2 = tf2 * idf)
-        # tf_idf <- tf_idf %>% mutate(tf_idf3 = tf3 * idf)
-        # tf_idf_only <- select(tf_idf, 'tf_idf1', 'tf_idf2', 'tf_idf3')
-        # names(tf_idf_only) <- c("Период 1", "Период 2", "Период 3")
-        # cos.mat <- cosine(as.matrix(tf_idf_only))
-      }
+      #}
+      # if (length(d_all) == 3) {
+      #   d_all <- full_join(full_join(d_all[[1]], d_all[[2]], by='keyword'), d_all[[3]], by='keyword')
+      #   d_all <- d_all %>% replace(is.na (.), 0)
+      #   rake_df <- select(d_all, 'keyword', 'rake.x', 'rake.y', 'rake')
+      #   names(rake_df) <- c('keyword', 'rake1', 'rake2', 'rake3')
+      #   # tf_idf <- select(d_all, 'word', 'freq.x', 'tf.x', 'freq.y','tf.y', 'freq', 'tf')
+      #   # names(tf_idf) <- c('word', 'freq1', 'tf1', 'freq2', 'tf2', 'freq3', 'tf3')
+      #   # tdm_df <- select(d_all, 'word', 'freq.x', 'freq.y', 'freq')
+      #   # names(tdm_df) <- c('word', 'freq1', 'freq2', 'freq3')
+      #   # tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2', 'freq3') != 0))
+      #   # tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
+      #   cos.mat <- cosine(as.matrix(select(rake_df, 'rake1', 'rake2', 'rake3')))
+      #   rake_df_with_dynamism <- rake_df
+      #   rake_df_with_dynamism$rake_all <- rake_df_with_dynamism$rake1 + rake_df_with_dynamism$rake2 + rake_df_with_dynamism$rake3
+      #
+      #
+      #   # tdm_df_with_dynamism <- tdm_df
+      #   # tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq1 + tdm_df_with_dynamism$freq2 + tdm_df_with_dynamism$freq3
+      #   # tdm_df_with_dynamism$rake.all <- d_all[[1]]$rake + d_all[[2]]$rake + d_all[[3]]$rake
+      #
+      #   # ???
+      #   # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1 + 1) / (tdm_df_with_dynamism$freq1 + 1)
+      #
+      #   # Средний абсолютный прирост
+      #   rake_df_with_dynamism$dynamism <- (rake_df_with_dynamism$rake3 - rake_df_with_dynamism$rake1) / 2
+      #   # tdm_df_with_dynamism$dynamism <- (d_all[[3]]$rake - d_all[[1]]$rake) / 2
+      #   # Средний коэффициент роста (Средний темп роста)
+      #   # tdm_df_with_dynamism$dynamism <- sqrt((tdm_df_with_dynamism$freq3 / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)))
+      #
+      #
+      #
+      #   # tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
+      #   # tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
+      #   # tf_idf <- tf_idf %>% mutate(tf_idf1 = tf1 * idf)
+      #   # tf_idf <- tf_idf %>% mutate(tf_idf2 = tf2 * idf)
+      #   # tf_idf <- tf_idf %>% mutate(tf_idf3 = tf3 * idf)
+      #   # tf_idf_only <- select(tf_idf, 'tf_idf1', 'tf_idf2', 'tf_idf3')
+      #   # names(tf_idf_only) <- c("Период 1", "Период 2", "Период 3")
+      #   # cos.mat <- cosine(as.matrix(tf_idf_only))
+      # }
       #
       # # ifelse(max(tdm_df_with_dynamism$freq_all) != 0, max(tdm_df_with_dynamism$freq_all), 1)  значит следующее.
       # # Если max(tdm_df_with_dynamism$freq_all) != 0, то вернуть max(tdm_df_with_dynamism$freq_all),
@@ -873,14 +1029,14 @@ server <- function(input, output, session) {
       rake_df_with_dynamism$rake_all_normalized <- (rake_df_with_dynamism$rake_all) /
         ifelse(max(rake_df_with_dynamism$rake_all) != 0,
                max(rake_df_with_dynamism$rake_all), 1)
-      
-      value_for_norm_of_dynamic <- ifelse(min(rake_df_with_dynamism$dynamism) < 0, 
+
+      value_for_norm_of_dynamic <- ifelse(min(rake_df_with_dynamism$dynamism) < 0,
                                           -min(rake_df_with_dynamism$dynamism), 0)
       rake_df_with_dynamism$dynamism_normalized <- (rake_df_with_dynamism$dynamism +
                                                       value_for_norm_of_dynamic) /
         ifelse(max(rake_df_with_dynamism$dynamism + value_for_norm_of_dynamic) != 0,
                max(rake_df_with_dynamism$dynamism + value_for_norm_of_dynamic), 1)
-      rake_df_with_dynamism$sum_of_rake_all_norm_and_dyn_norm <- 
+      rake_df_with_dynamism$sum_of_rake_all_norm_and_dyn_norm <-
         rake_df_with_dynamism$dynamism_normalized + rake_df_with_dynamism$rake_all_normalized
       # # Сортировка датафрейма по столбцу freq_all_and_dynamism_normalized по убыванию
       rake_df_with_dynamism <- rake_df_with_dynamism[order(rake_df_with_dynamism$sum_of_rake_all_norm_and_dyn_norm, decreasing = TRUE),]
@@ -908,47 +1064,47 @@ server <- function(input, output, session) {
         amount_of_words_in_plot <- 30
         # Вывод графика для amount_of_words_in_plot слов без пересечений слов на графике.
         # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
-        
-        # Нормализация данных для отображения точек на 
+
+        # Нормализация данных для отображения точек на
         # отрезки [0, 1] для 30 слов
-        
-        # Выделение 30 слов с наибольшими значениями sum_of_rake_all_norm_and_dyn_norm 
+
+        # Выделение 30 слов с наибольшими значениями sum_of_rake_all_norm_and_dyn_norm
         rake_df_with_dynamism_limited <- rake_df_with_dynamism[1:amount_of_words_in_plot, ]
-        
-  
+
+
         # Нормализация динамики для 30 слов
-        
+
         # Нужно сместить все значения динамики, чтобы их минимум был в 0.
         # Если минимум отрицательный, то при его вычитании из остальных значений
         # новый минимум окажется в нуле (так как минус на минус дает плюс).
         # Если минимум положительный, то при его вычитании из остальных значений
         # новый минимум так же окажется в нуле.
-        rake_df_with_dynamism_limited$dynamism_shifted_for_30 <- rake_df_with_dynamism_limited$dynamism - 
+        rake_df_with_dynamism_limited$dynamism_shifted_for_30 <- rake_df_with_dynamism_limited$dynamism -
           min(rake_df_with_dynamism_limited$dynamism)
-        
-        
-        # После смещения все значения делятся на новый максимум, 
+
+
+        # После смещения все значения делятся на новый максимум,
         # чтобы отобразить все значения динамики на отрезок [0; 1].
         rake_df_with_dynamism_limited$dynamism_normalized_for_30 <- rake_df_with_dynamism_limited$dynamism_shifted_for_30 /
           ifelse(max(rake_df_with_dynamism_limited$dynamism_shifted_for_30) != 0,
                  max(rake_df_with_dynamism_limited$dynamism_shifted_for_30), 1)
-        
-        
+
+
         # Нормализация rake_all для 30 слов
-        
+
         # rake_df_with_dynamism_limited$rake_all >= 0.
         # Нужно сместить все значения rake_all, чтобы их минимум был в 0.
-        # rake_all >= 0. Значит при вычитании минимума из всех значенией, 
+        # rake_all >= 0. Значит при вычитании минимума из всех значенией,
         # новый минимум окажется в нуле.
         rake_df_with_dynamism_limited$rake_all_shifted_for_30 <- rake_df_with_dynamism_limited$rake_all - min(rake_df_with_dynamism_limited$rake_all)
-        
-        # После смещения все значения делятся на новый максимум, 
+
+        # После смещения все значения делятся на новый максимум,
         # чтобы отобразить все значения rake_all на отрезок [0; 1].
         rake_df_with_dynamism_limited$rake_all_normalized_for_30 <- (rake_df_with_dynamism_limited$rake_all_shifted_for_30) /
           ifelse(max(rake_df_with_dynamism_limited$rake_all_shifted_for_30) != 0,
                  max(rake_df_with_dynamism_limited$rake_all_shifted_for_30), 1)
-        
-        
+
+
         plot_limited <- ggplot(rake_df_with_dynamism_limited, aes(x = dynamism_normalized_for_30, y = rake_all_normalized_for_30, label = keyword)) +
           geom_point() +
           geom_text_repel(max.overlaps = 40) +
@@ -957,11 +1113,194 @@ server <- function(input, output, session) {
         # Сохранение графика в директорию с запускаемой программой
         # Для width и height значение 1 значит 300 пискселей, 2 - 600, ...
         ggsave("30 слов.png", plot = plot_limited, width = 8, height = 6, dpi = 300)
-        
+
         showNotification(label_calculation_end, duration = time_of_notification_duration)
         return(plot_limited)
       })
     }
+    
+    
+    # d_all <- Filter(Negate(is.null), list(files_preprocessed_data_rake[["df_1"]],
+    #                                       files_preprocessed_data_rake[["df_2"]],
+    #                                       files_preprocessed_data_rake[["df_3"]]))
+    # cos.mat <- NULL
+    # if (length(d_all) <= 1) {
+    #   showNotification("Для анализа должно быть обработано не менее двух файлов с помощью одного метода.",
+    #                    duration = time_of_notification_duration)
+    # }
+    # else
+    # {
+    #   showNotification(label_calculation_begining, duration = time_of_notification_duration)
+    #   if (length(d_all) == 2) {
+    #     d_all <- full_join(d_all[[1]], d_all[[2]], by='keyword')
+    #     d_all <- d_all %>% replace(is.na (.), 0)
+    #     # show(d_all)
+    #     rake_df <- select(d_all, 'keyword', 'rake.x', 'rake.y')
+    #     names(rake_df) <- c('keyword', 'rake1', 'rake2')
+    #     # show(rake_df)
+    #     # tdm_df <- select(d_all, 'word', 'freq.x', 'freq.y')
+    #     # names(tdm_df) <- c('word', 'freq1', 'freq2')
+    #     # tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2') != 0))
+    #     # tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
+    #     cos.mat <- cosine(as.matrix(select(rake_df, 'rake1', 'rake2')))
+    #     rake_df_with_dynamism <- rake_df
+    #     rake_df_with_dynamism$rake_all <- rake_df_with_dynamism$rake1 + rake_df_with_dynamism$rake2
+    # 
+    #     # ???
+    #     # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq2 - tdm_df_with_dynamism$freq1) / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)
+    # 
+    #     # Средний абсолютный прирост
+    #     rake_df_with_dynamism$dynamism <- rake_df_with_dynamism$rake2 - rake_df_with_dynamism$rake1
+    #     # Средний коэффициент роста (Средний темп роста)
+    #     # tdm_df_with_dynamism$dynamism <- sqrt((tdm_df_with_dynamism$freq3 / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)))
+    # 
+    # 
+    #     # tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
+    #     # tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
+    #     # tf_idf <- tf_idf %>% mutate(tf_idf1 = tf1 * idf)
+    #     # tf_idf <- tf_idf %>% mutate(tf_idf2 = tf2 * idf)
+    #     # tf_idf_only <- select(tf_idf, 'tf_idf1', 'tf_idf2')
+    # 
+    # 
+    #     # names(tf_idf_only) <- c("Период 1", "Период 2")
+    #     # cos.mat <- cosine(as.matrix(tf_idf_only))  # Removes the first column for cosine calculation
+    #   }
+    #   if (length(d_all) == 3) {
+    #     d_all <- full_join(full_join(d_all[[1]], d_all[[2]], by='keyword'), d_all[[3]], by='keyword')
+    #     d_all <- d_all %>% replace(is.na (.), 0)
+    #     rake_df <- select(d_all, 'keyword', 'rake.x', 'rake.y', 'rake')
+    #     names(rake_df) <- c('keyword', 'rake1', 'rake2', 'rake3')
+    #     # tf_idf <- select(d_all, 'word', 'freq.x', 'tf.x', 'freq.y','tf.y', 'freq', 'tf')
+    #     # names(tf_idf) <- c('word', 'freq1', 'tf1', 'freq2', 'tf2', 'freq3', 'tf3')
+    #     # tdm_df <- select(d_all, 'word', 'freq.x', 'freq.y', 'freq')
+    #     # names(tdm_df) <- c('word', 'freq1', 'freq2', 'freq3')
+    #     # tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2', 'freq3') != 0))
+    #     # tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
+    #     cos.mat <- cosine(as.matrix(select(rake_df, 'rake1', 'rake2', 'rake3')))
+    #     rake_df_with_dynamism <- rake_df
+    #     rake_df_with_dynamism$rake_all <- rake_df_with_dynamism$rake1 + rake_df_with_dynamism$rake2 + rake_df_with_dynamism$rake3
+    # 
+    # 
+    #     # tdm_df_with_dynamism <- tdm_df
+    #     # tdm_df_with_dynamism$freq_all <- tdm_df_with_dynamism$freq1 + tdm_df_with_dynamism$freq2 + tdm_df_with_dynamism$freq3
+    #     # tdm_df_with_dynamism$rake.all <- d_all[[1]]$rake + d_all[[2]]$rake + d_all[[3]]$rake
+    # 
+    #     # ???
+    #     # tdm_df_with_dynamism$dynamism <- (tdm_df_with_dynamism$freq3 - tdm_df_with_dynamism$freq1 + 1) / (tdm_df_with_dynamism$freq1 + 1)
+    # 
+    #     # Средний абсолютный прирост
+    #     rake_df_with_dynamism$dynamism <- (rake_df_with_dynamism$rake3 - rake_df_with_dynamism$rake1) / 2
+    #     # tdm_df_with_dynamism$dynamism <- (d_all[[3]]$rake - d_all[[1]]$rake) / 2
+    #     # Средний коэффициент роста (Средний темп роста)
+    #     # tdm_df_with_dynamism$dynamism <- sqrt((tdm_df_with_dynamism$freq3 / ifelse(tdm_df_with_dynamism$freq1 != 0, tdm_df_with_dynamism$freq1, 1)))
+    # 
+    # 
+    # 
+    #     # tf_idf <- tf_idf %>% mutate(num_of_occurrences = tdm_df$num_of_occurrences)
+    #     # tf_idf <- tf_idf %>% mutate(idf = tdm_df$idf)
+    #     # tf_idf <- tf_idf %>% mutate(tf_idf1 = tf1 * idf)
+    #     # tf_idf <- tf_idf %>% mutate(tf_idf2 = tf2 * idf)
+    #     # tf_idf <- tf_idf %>% mutate(tf_idf3 = tf3 * idf)
+    #     # tf_idf_only <- select(tf_idf, 'tf_idf1', 'tf_idf2', 'tf_idf3')
+    #     # names(tf_idf_only) <- c("Период 1", "Период 2", "Период 3")
+    #     # cos.mat <- cosine(as.matrix(tf_idf_only))
+    #   }
+    #   #
+    #   # # ifelse(max(tdm_df_with_dynamism$freq_all) != 0, max(tdm_df_with_dynamism$freq_all), 1)  значит следующее.
+    #   # # Если max(tdm_df_with_dynamism$freq_all) != 0, то вернуть max(tdm_df_with_dynamism$freq_all),
+    #   # # иначе вернуть 1.
+    #   rake_df_with_dynamism$rake_all_normalized <- (rake_df_with_dynamism$rake_all) /
+    #     ifelse(max(rake_df_with_dynamism$rake_all) != 0,
+    #            max(rake_df_with_dynamism$rake_all), 1)
+    # 
+    #   value_for_norm_of_dynamic <- ifelse(min(rake_df_with_dynamism$dynamism) < 0,
+    #                                       -min(rake_df_with_dynamism$dynamism), 0)
+    #   rake_df_with_dynamism$dynamism_normalized <- (rake_df_with_dynamism$dynamism +
+    #                                                   value_for_norm_of_dynamic) /
+    #     ifelse(max(rake_df_with_dynamism$dynamism + value_for_norm_of_dynamic) != 0,
+    #            max(rake_df_with_dynamism$dynamism + value_for_norm_of_dynamic), 1)
+    #   rake_df_with_dynamism$sum_of_rake_all_norm_and_dyn_norm <-
+    #     rake_df_with_dynamism$dynamism_normalized + rake_df_with_dynamism$rake_all_normalized
+    #   # # Сортировка датафрейма по столбцу freq_all_and_dynamism_normalized по убыванию
+    #   rake_df_with_dynamism <- rake_df_with_dynamism[order(rake_df_with_dynamism$sum_of_rake_all_norm_and_dyn_norm, decreasing = TRUE),]
+    #   show(rake_df_with_dynamism)
+    #   #
+    #   #
+    #   #
+    #   output$compareFilesTable <- renderTable({
+    #     cos.mat
+    #   })
+    #   output$dynamicPlotAll <- renderPlot({
+    #     # Вывод всех слов на графике, кроме тех, которые пересекаются
+    #     # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
+    #     plot_all <- ggplot(rake_df_with_dynamism, aes(x = dynamism, y = rake_all, label = keyword)) +
+    #       geom_point() +
+    #       geom_text_repel(max.overlaps = 10, max.time = 0.2) +
+    #       labs(x = "Динамика", y = "Значимость", title = "Тренд-карта для всех слов") +
+    #       # theme_minimal()
+    #       theme_classic()
+    #     # Сохранение графика в директорию с запускаемой программой
+    #     ggsave("Все слова.png", plot = plot_all, width = 8, height = 6, dpi = 300)
+    #     return(plot_all)
+    #   })
+    #   output$dynamicPlotLimited <- renderPlot({
+    #     amount_of_words_in_plot <- 30
+    #     # Вывод графика для amount_of_words_in_plot слов без пересечений слов на графике.
+    #     # При этом подписываются некоторые слова, хотя точки на графике есть для всех слов.
+    # 
+    #     # Нормализация данных для отображения точек на
+    #     # отрезки [0, 1] для 30 слов
+    # 
+    #     # Выделение 30 слов с наибольшими значениями sum_of_rake_all_norm_and_dyn_norm
+    #     rake_df_with_dynamism_limited <- rake_df_with_dynamism[1:amount_of_words_in_plot, ]
+    # 
+    # 
+    #     # Нормализация динамики для 30 слов
+    # 
+    #     # Нужно сместить все значения динамики, чтобы их минимум был в 0.
+    #     # Если минимум отрицательный, то при его вычитании из остальных значений
+    #     # новый минимум окажется в нуле (так как минус на минус дает плюс).
+    #     # Если минимум положительный, то при его вычитании из остальных значений
+    #     # новый минимум так же окажется в нуле.
+    #     rake_df_with_dynamism_limited$dynamism_shifted_for_30 <- rake_df_with_dynamism_limited$dynamism -
+    #       min(rake_df_with_dynamism_limited$dynamism)
+    # 
+    # 
+    #     # После смещения все значения делятся на новый максимум,
+    #     # чтобы отобразить все значения динамики на отрезок [0; 1].
+    #     rake_df_with_dynamism_limited$dynamism_normalized_for_30 <- rake_df_with_dynamism_limited$dynamism_shifted_for_30 /
+    #       ifelse(max(rake_df_with_dynamism_limited$dynamism_shifted_for_30) != 0,
+    #              max(rake_df_with_dynamism_limited$dynamism_shifted_for_30), 1)
+    # 
+    # 
+    #     # Нормализация rake_all для 30 слов
+    # 
+    #     # rake_df_with_dynamism_limited$rake_all >= 0.
+    #     # Нужно сместить все значения rake_all, чтобы их минимум был в 0.
+    #     # rake_all >= 0. Значит при вычитании минимума из всех значенией,
+    #     # новый минимум окажется в нуле.
+    #     rake_df_with_dynamism_limited$rake_all_shifted_for_30 <- rake_df_with_dynamism_limited$rake_all - min(rake_df_with_dynamism_limited$rake_all)
+    # 
+    #     # После смещения все значения делятся на новый максимум,
+    #     # чтобы отобразить все значения rake_all на отрезок [0; 1].
+    #     rake_df_with_dynamism_limited$rake_all_normalized_for_30 <- (rake_df_with_dynamism_limited$rake_all_shifted_for_30) /
+    #       ifelse(max(rake_df_with_dynamism_limited$rake_all_shifted_for_30) != 0,
+    #              max(rake_df_with_dynamism_limited$rake_all_shifted_for_30), 1)
+    # 
+    # 
+    #     plot_limited <- ggplot(rake_df_with_dynamism_limited, aes(x = dynamism_normalized_for_30, y = rake_all_normalized_for_30, label = keyword)) +
+    #       geom_point() +
+    #       geom_text_repel(max.overlaps = 40) +
+    #       labs(x = "Динамика", y = "Значимость", title = paste0("Тренд-карта для ", amount_of_words_in_plot, " слов")) +
+    #       theme_classic()
+    #     # Сохранение графика в директорию с запускаемой программой
+    #     # Для width и height значение 1 значит 300 пискселей, 2 - 600, ...
+    #     ggsave("30 слов.png", plot = plot_limited, width = 8, height = 6, dpi = 300)
+    # 
+    #     showNotification(label_calculation_end, duration = time_of_notification_duration)
+    #     return(plot_limited)
+    #   })
+    # }
   }
   
   
@@ -994,6 +1333,26 @@ server <- function(input, output, session) {
     if (input$radio == 2)
     {
       files_preprocessed_data_rake[["df_3"]] <- AnalyzeAndRenderRake(input[["file3"]], "barPlot3", "wordTable3", "wordcloud3")
+    }
+  })
+  observeEvent(input$analyze4, {
+    if (input$radio == 1) 
+    {
+      files_preprocessed_data_frequency[["df_4"]] <- AnalyzeAndRenderFrequency(input[["file4"]], "barPlot4", "wordTable4", "wordcloud4")
+    }
+    if (input$radio == 2)
+    {
+      files_preprocessed_data_rake[["df_4"]] <- AnalyzeAndRenderRake(input[["file4"]], "barPlot4", "wordTable4", "wordcloud4")
+    }
+  })
+  observeEvent(input$analyze5, {
+    if (input$radio == 1) 
+    {
+      files_preprocessed_data_frequency[["df_5"]] <- AnalyzeAndRenderFrequency(input[["file5"]], "barPlot5", "wordTable5", "wordcloud5")
+    }
+    if (input$radio == 2)
+    {
+      files_preprocessed_data_rake[["df_5"]] <- AnalyzeAndRenderRake(input[["file5"]], "barPlot5", "wordTable5", "wordcloud5")
     }
   })
   observeEvent(input[["compareFilesBtn"]], {
