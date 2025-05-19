@@ -300,21 +300,22 @@ ui <- fluidPage(
   titlePanel("Анализ регионов по разным периодам"),
   radioButtons( 
     inputId = "radio", 
-    label = label_radio_buttons, 
+    label = p(label_radio_buttons, style = "font-size:20px"), 
     choices = list( 
       "TF" = 1, 
       "RAKE" = 2
-    )
+    ),
+    width = "50%"
   ), 
   tabsetPanel(id = "tabs",
-              tabPanel("Период 1",
+              tabPanel(p("Период 1", style = "font-size:20px"),
                        sidebarLayout(
                          sidebarPanel(
-                           fileInput("file1", label = label_choose_file, 
-                                     buttonLabel = label_input_file_button, 
-                                     placeholder = label_input_placeholder,
+                           fileInput("file1", label = p(label_choose_file, style = "font-size:20px"), 
+                                     buttonLabel = p(label_input_file_button, style = "font-size:20px"), 
+                                     placeholder = p(label_input_placeholder, style = "font-size:20px"),
                                      accept = ".xlsx"),
-                           actionButton("analyze1", label_action_output_results),
+                           actionButton("analyze1", p(label_action_output_results, style = "font-size:20px")),
                            width = width_of_sidebar_panel
                          ),
                          mainPanel(
