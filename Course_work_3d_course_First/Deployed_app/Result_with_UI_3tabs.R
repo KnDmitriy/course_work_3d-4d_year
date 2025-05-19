@@ -297,10 +297,72 @@ width_of_main_panel <- 7
 time_of_notification_duration <- 20
 
 ui <- fluidPage(
+  tags$style(HTML("
+  /* Базовый размер для всего документа */
+  body, .btn, .selectize-input, .selectize-dropdown {
+    font-size: 20px !important;
+  }
+
+  /* Заголовки вкладок */
+  .nav-tabs > li > a {
+    font-size: 20px !important;
+  }
+
+  /* Таблицы */
+  table.dataTable, .dataTables_wrapper {
+    font-size: 20px !important;
+  }
+
+  /* Заголовки панелей */
+  .h4, h4 {
+    font-size: 20px !important;
+  }
+  
+  /* Элементы управления вводами */
+  .control-label {
+    font-size: 20px !important;
+  }
+  .form-control {
+    font-size: 20px !important;
+  }
+  .input-group-btn.input-group-prepend
+  {
+    font-size: 20px !important;
+  }
+  
+  /* Кнопка 'Открыть...' */ 
+  .btn.btn-default.btn-file
+  {
+    font-size: 20px !important;
+    width: 150px;
+  }
+  
+  /* 'Файл не выбран' */
+  .form-control
+  {
+    font-size: 20px !important;
+    height: 42px
+  }
+  
+  .shiny-file-input-progress .progress-bar::after {
+    content: Файл загружен
+  }
+  .progress-bar 
+  {
+    content: Файл загружен
+  }
+  
+  /* Текст внутри кнопок */
+  .action-button {
+    font-size: 20px !important;
+  }
+")),
+  
+  
   titlePanel("Анализ регионов по разным периодам"),
   radioButtons( 
     inputId = "radio", 
-    label = p(label_radio_buttons, style = "font-size:20px"), 
+    label = label_radio_buttons, 
     choices = list( 
       "TF" = 1, 
       "RAKE" = 2
@@ -308,14 +370,14 @@ ui <- fluidPage(
     width = "50%"
   ), 
   tabsetPanel(id = "tabs",
-              tabPanel(p("Период 1", style = "font-size:20px"),
+              tabPanel("Период 1",
                        sidebarLayout(
                          sidebarPanel(
-                           fileInput("file1", label = p(label_choose_file, style = "font-size:20px"), 
-                                     buttonLabel = p(label_input_file_button, style = "font-size:20px"), 
-                                     placeholder = p(label_input_placeholder, style = "font-size:20px"),
+                           fileInput("file1", label = label_choose_file, 
+                                     buttonLabel = label_input_file_button, 
+                                     placeholder = label_input_placeholder,
                                      accept = ".xlsx"),
-                           actionButton("analyze1", p(label_action_output_results, style = "font-size:20px")),
+                           actionButton("analyze1", label_action_output_results),
                            width = width_of_sidebar_panel
                          ),
                          mainPanel(
@@ -1009,5 +1071,7 @@ server <- function(input, output, session) {
   })
 }
 
+
+show(ui)
 shinyApp(ui = ui, server = server)
 
