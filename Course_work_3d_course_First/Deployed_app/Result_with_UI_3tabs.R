@@ -13,7 +13,6 @@ InstallOrLoadPack(packages)
 # Убраны пакеты wordcloud, Rcpp, devtools
 
 
-
 Wordcloud2a <- function (data, size = 1, minSize = 0, gridSize = 0, fontFamily = "Segoe UI", 
                          fontWeight = "bold", color = "random-dark", backgroundColor = "white", 
                          minRotation = -pi/4, maxRotation = pi/4, shuffle = TRUE, 
@@ -297,6 +296,7 @@ width_of_main_panel <- 7
 time_of_notification_duration <- 20
 
 ui <- fluidPage(
+  tags$style(".my-class {font-size: 20%; line-height: 1.6;}"),
   titlePanel("Анализ регионов по разным периодам"),
   radioButtons( 
     inputId = "radio", 
@@ -513,7 +513,7 @@ server <- function(input, output, session) {
     # tmp <- tmp[sapply(tmp, nchar) > 0]
     
     x$lemma <- tmp
-    show(x)
+    # show(x)
     # Оставлять только существительные и прилагательные. 
     # Стоп-слова "мои" используются.
     # В качестве терминов берутся слова из таблицы x из столбца lemma,
@@ -521,7 +521,91 @@ server <- function(input, output, session) {
     # Оставлять только фразы, частота встречаемости которых >= параметра n_min
     # Метод keywords_rake возвращает таблицу со столбцами keyword, ngram, freq, rake;
     # ключевые фразы в таблице отсортированы по убыванию столбца rake. 
-    keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"),
+    
+    # Определение функции keywords_rake с параметрами
+    keywords_rake_test <- function(x, term, group, relevant = rep(TRUE, nrow(x)), ngram_max = 2, n_min = 2, sep = " ") {
+      # Объявление переменных для избежания предупреждений при проверке пакета
+      .relevant <- .N <- keyword_id <- keyword <- degree <- word <- freq <- ngram <- rake <- rake_word_score <- NULL
+      
+      # Проверка входных данных:
+      stopifnot(is.data.frame(x))  # x должен быть data.frame
+      stopifnot(term %in% colnames(x))  # term должен быть столбцом в x
+      stopifnot(all(group %in% colnames(x)))  # все элементы group должны быть столбцами x
+      stopifnot(length(relevant) == nrow(x))  # длина relevant должна совпадать с числом строк x
+      
+      # Преобразование группирующих переменных:
+      if (length(group) > 1) {
+        # Если несколько групп, создаем уникальный идентификатор группы
+        x <- data.table(group = unique_identifier(x, fields = group), 
+                        word = x[[term]], .relevant = relevant)
+      } else {
+        # Если одна группа, берем ее напрямую
+        x <- data.table(group = x[[group]], word = x[[term]], .relevant = relevant)
+      }
+      # Создание уникального ID для последовательных релевантных сегментов
+      x$keyword_id <- data.table::rleid(x[["group"]], x[[".relevant"]])
+      
+      # Фильтрация: оставляем только релевантные строки и выбираем нужные столбцы
+      x <- subset(x, .relevant != FALSE, select = c("keyword_id", "word"))
+      
+      # Формирование ключевых слов: объединение слов по keyword_id с разделителем sep
+      x <- x[, `:=`(keyword, paste(word, collapse = sep)), by = list(keyword_id)]
+      
+      # Вычисление степени (degree) для каждого слова: количество слов в ключевой фразе - 1
+      x <- x[, `:=`(degree, .N - 1L), by = list(keyword_id)]
+      # show(length(unlist(x)))
+      
+      #show(unlist(x))
+      # Подготовка данных для расчета RAKE:
+      word_score <- list()
+      # Суммирование степени для каждого уникального слова
+      word_score$degree <- x[, list(degree = sum(degree)), by = list(word)]
+      # Расчет частоты слов с помощью функции txt_freq
+      # word_score$freq - таблица, состоящая из столбцов key, freq, freq_pct
+      # key - уникальное слово (не фраза), freq - сколько раз оно встречается,
+      # freq_pct - отношение частоты слова к количеству всех слов.
+      word_score$freq <- txt_freq(x$word)
+      word_score$freq <- setDT(word_score$freq)  # Преобразование в data.table
+
+      
+      # Объединение данных о степени и частоте слов
+      word_score <- merge(word_score$degree, word_score$freq, 
+                          by.x = "word", by.y = "key", all.x = FALSE, all.y = TRUE)
+      
+      # Расчет RAKE-оценки для каждого слова: степень / частота
+      word_score$rake_word_score <- word_score$degree / word_score$freq
+      show(x)
+      show(word_score)
+      # Сбор статистики по ключевым словам:
+      # Частота ключевых фраз (по уникальным keyword_id)
+      keywords <- x[, list(freq = length(unique(keyword_id))), by = list(keyword, word)]
+      
+      # Добавление RAKE-оценок слов к ключевым словам
+      keywords <- merge(keywords, word_score[, c("word", "rake_word_score"), with = FALSE], 
+                        by = "word", all.x = TRUE, all.y = FALSE)
+      show(keywords)
+      # Агрегация: расчет общего RAKE и ngram для каждого ключевого слова
+      keywords <- keywords[, list(ngram = .N, rake = sum(rake_word_score)), 
+                           by = list(keyword, freq)]
+      show(keywords)
+      # Фильтрация результатов по максимальному ngram и минимальной частоте
+      keywords <- subset(keywords, ngram <= ngram_max & freq >= n_min)
+      
+      # Сортировка результатов по убыванию RAKE
+      setorder(keywords, -rake)
+      
+      # Переупорядочивание столбцов: keyword, ngram, freq, rake
+      keywords <- data.table::setcolorder(keywords, neworder = c("keyword", "ngram", "freq", "rake"))
+      
+      # Преобразование результата в data.frame для вывода
+      keywords <- setDF(keywords)
+      
+      # Возврат итогового data.frame
+      keywords
+    }
+    
+    
+    keywords_rake_df <- keywords_rake_test(x, term = "lemma", group = c("sentence_id"),
                                       relevant = x$upos %in% c("NOUN", "ADJ") &
                                         !(x$lemma %in% stopwords_combined_list),
                                       n_min = 2)
@@ -607,7 +691,7 @@ server <- function(input, output, session) {
     keywords_rake_df <- GetRakeKeywords(file_input)
     # show(keywords_rake_df)
     keywords_rake_df_for_output <- keywords_rake_df[c("keyword", "freq", "rake")]
-    show(keywords_rake_df_for_output)
+    # show(keywords_rake_df_for_output)
     output[[plot_output]] <- renderPlot({
       ggplot(keywords_rake_df_for_output[1:10, ], aes(x = reorder(keyword, rake), y = rake)) +
         geom_bar(stat = "identity") +
@@ -630,7 +714,7 @@ server <- function(input, output, session) {
   AnalyzeAndRenderFrequency <- function(file_input, plot_output, table_output, wordcloud_output) {   
     preprocessed_texts_word_list <- GetPreprocessedTextsWordList(file_input)
     d <- as.data.frame(sort(table(preprocessed_texts_word_list), decreasing = TRUE))
-    show(d)
+    # show(d)
     colnames(d) <- c("word", "freq")
     word_freq <- d
     d$tf <- d$freq / nrow(d)
@@ -704,9 +788,13 @@ server <- function(input, output, session) {
       # tf_idf <- select(d_all, 'word', 'freq1', 'tf1')
       tf_idf <- d_all %>% select(all_of(col_names_word_freq_tf))
       tdm_df <- d_all %>% select(all_of(col_names_word_freq))
-
-      tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, all_of(col_names_freq)) != 0))
-      tdm_df <- tdm_df %>% mutate(idf = log(4 / (1 + num_of_occurrences) + 1))
+      show(tdm_df)
+      tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df,
+                                                                      all_of(col_names_freq)) != 0))
+      # tdm_df$num_of_occurrences - количество файлов, 
+      # в которых встречается слово из столбца word
+      tdm_df <- tdm_df %>% mutate(idf = log((amount_of_processed_files + 1) / 
+                                              (1 + num_of_occurrences) + 1))
 
       tdm_df_with_dynamism <- tdm_df
 
@@ -903,9 +991,9 @@ server <- function(input, output, session) {
 
         for (i in  1:amount_of_processed_files)
         {
-          show(names(d_all[[i]]))
+          # show(names(d_all[[i]]))
           names(d_all[[i]]) <- c("keyword", paste("ngram", i, sep = ''), paste("freq", i, sep = ""), paste("rake", i, sep = ""))
-          show(names(d_all[[i]]))
+          # show(names(d_all[[i]]))
         }
         res <- d_all[[1]]
         # Соединение таблиц по столбцу keyword
@@ -939,7 +1027,7 @@ server <- function(input, output, session) {
           period_names <- c(period_names, paste0("Период ", i, sep = ""))
         }
         names(rake_df_only) <- period_names
-        show(rake_df_only)
+        # show(rake_df_only)
         # tdm_df <- select(d_all, 'word', 'freq.x', 'freq.y')
         # names(tdm_df) <- c('word', 'freq1', 'freq2')
         # tdm_df <- tdm_df %>% mutate(num_of_occurrences = rowSums(select(tdm_df, 'freq1', 'freq2') != 0))
@@ -1040,7 +1128,7 @@ server <- function(input, output, session) {
         rake_df_with_dynamism$dynamism_normalized + rake_df_with_dynamism$rake_all_normalized
       # # Сортировка датафрейма по столбцу freq_all_and_dynamism_normalized по убыванию
       rake_df_with_dynamism <- rake_df_with_dynamism[order(rake_df_with_dynamism$sum_of_rake_all_norm_and_dyn_norm, decreasing = TRUE),]
-      show(rake_df_with_dynamism)
+      # show(rake_df_with_dynamism)
       #
       #
       #
@@ -1368,4 +1456,3 @@ server <- function(input, output, session) {
 }
 
 shinyApp(ui = ui, server = server)
-
