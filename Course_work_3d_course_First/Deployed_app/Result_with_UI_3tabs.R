@@ -689,7 +689,7 @@ server <- function(input, output, session) {
                                           files_preprocessed_data_frequency[["df_3"]])) 
     cos.mat <- NULL
     if (length(d_all) <= 1) {
-      showNotification("Для анализа должно быть обработано не менее двух файлов с помощью одного метода.", 
+      showNotification("Для анализа должно быть обработано не менее двух файлов с помощью выбранного метода.", 
                        duration = time_of_notification_duration)
     }
     else 
