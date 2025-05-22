@@ -227,7 +227,9 @@ GetListOfStopwords <- function() {
                            'игтисамов', 'ирек', 'сагит', 'илшат', 'тажитдин', 
                            'ильшат', 'фазрахман', 'моусошгкаменкапензенскаяобласть',
                            'руб.', '-й', 'рубла', 'лир', 'рисок', 'уловек', 'месяц.',
-                           'рубла.'
+                           'рубла.',
+                           
+                           'ао', 'гбуз', 'амокб', 'оикб', '⃣⃣', '⃣'
   )
   
   
@@ -582,7 +584,7 @@ server <- function(input, output, session) {
     # ключевые фразы в таблице отсортированы по убыванию столбца rake. 
     
     # Определение функции keywords_rake с параметрами
-    keywords_rake_test <- function(x, term, group, relevant = rep(TRUE, nrow(x)), ngram_max = 2, n_min = 2, sep = " ") {
+    keywords_rake_test <- function(x, term, group, relevant = rep(TRUE, nrow(x)), ngram_max = 2, n_min = 30, sep = " ") {
       # Объявление переменных для избежания предупреждений при проверке пакета
       .relevant <- .N <- keyword_id <- keyword <- degree <- word <- freq <- ngram <- rake <- rake_word_score <- NULL
       
@@ -667,7 +669,7 @@ server <- function(input, output, session) {
     keywords_rake_df <- keywords_rake_test(x, term = "lemma", group = c("sentence_id"),
                                       relevant = x$upos %in% c("NOUN", "ADJ") &
                                         !(x$lemma %in% stopwords_combined_list),
-                                      n_min = 2)
+                                      n_min = 3)
     # keywords_rake_df <- keywords_rake(x, term = "lemma", group = c("sentence_id"),
     #                                   relevant = x$upos %in% c("NOUN", "ADJ") &
     #                                     !(x$lemma %in% stopwords_combined_list) &
@@ -762,8 +764,12 @@ server <- function(input, output, session) {
       colnames(keywords_rake_df_for_output) <- c("Ключевые слова", "Частота встречаемости", "RAKE")
       head(keywords_rake_df_for_output, 10)
     })
+    keywords_rake_df_for_output_wordcloud <- keywords_rake_df_for_output[c("keyword", "freq")]
+    # Сортировка по столбцу freq по убыванию для облака слов
+    keywords_rake_df_for_output_wordcloud <- keywords_rake_df_for_output_wordcloud[
+      order(keywords_rake_df_for_output_wordcloud$freq, decreasing = TRUE),]
     output[[wordcloud_output]] <- renderWordcloud2({
-      Wordcloud2a(keywords_rake_df_for_output[c("keyword", "freq")], size = 0.45)
+      Wordcloud2a(keywords_rake_df_for_output_wordcloud, size = 0.45)
     })
     showNotification(label_calculation_end, duration = time_of_notification_duration)
     return(keywords_rake_df)
@@ -795,6 +801,7 @@ server <- function(input, output, session) {
       Wordcloud2a(word_freq, size = 0.45)
     })
     showNotification(label_calculation_end, duration = time_of_notification_duration)
+    show(d)
     return(d)
   }
 
@@ -1015,6 +1022,7 @@ server <- function(input, output, session) {
           geom_text_repel(max.overlaps = 40) +
           labs(x = "Динамика", y = "Значимость", title = paste0("Тренд-карта для ", amount_of_words_in_plot, " слов")) +
           theme_classic()
+        ggsave("30 слов TF.png", plot = dynamicPlotLimited, width = 8, height = 6, dpi = 300)
         showNotification(label_calculation_end, duration = time_of_notification_duration)
         return(dynamicPlotLimited)
       })
@@ -1259,7 +1267,7 @@ server <- function(input, output, session) {
           theme_classic()
         # Сохранение графика в директорию с запускаемой программой
         # Для width и height значение 1 значит 300 пискселей, 2 - 600, ...
-        ggsave("30 слов.png", plot = plot_limited, width = 8, height = 6, dpi = 300)
+        ggsave("30 слов RAKE.png", plot = plot_limited, width = 8, height = 6, dpi = 300)
 
         showNotification(label_calculation_end, duration = time_of_notification_duration)
         return(plot_limited)
